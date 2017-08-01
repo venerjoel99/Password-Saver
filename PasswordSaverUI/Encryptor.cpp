@@ -206,16 +206,16 @@ bool Encryptor::isEncrypted(){
     for (int i = 0; i < 3; i++){
         string fileName = directory + "key" + Convert::intStr(i+1) + ".bin";
         string dataFeed = fileStr(fileName);
-        int fileSize = dataFeed.size();             //Determine size of string, NOT FILE(newline characters are 1-bit in string)
-        char* charChecker = new char[fileSize];     //New character array
+        int fileSize = dataFeed.size();
+        char* charChecker = new char[fileSize];
         for (int j=0; j<fileSize; j++){
-            charChecker[j] = dataFeed.at(j);        //Convert string to character array
+            charChecker[j] = dataFeed.at(j);
         }
         encrypted[i] = false;
         for (int k=0; k<fileSize; k++){
             if ((int)charChecker[k]<0 ||
-                (int)charChecker[k]>127){             //If ASCII is less than 0,
-                delete[] charChecker;               //then the character is not a letter, number, or recognized symbol
+                (int)charChecker[k]>127){
+                delete[] charChecker;
                 encrypted[i] = true;
                 break;
             }
@@ -228,19 +228,19 @@ bool Encryptor::isEncrypted(){
 bool Encryptor::isEncrypted(string fileName){
     open(false, fileName);
     string dataFeed = fileStr(fileName);
-    int fileSize = dataFeed.size();             //Determine size of string, NOT FILE(newline characters are 1-bit in string)
-    char* charChecker = new char[fileSize];     //New character array
+    int fileSize = dataFeed.size();
+    char* charChecker = new char[fileSize];
     for (int i=0; i<fileSize; i++){
-        charChecker[i] = dataFeed.at(i);        //Convert string to character array
+        charChecker[i] = dataFeed.at(i);
     }
     for (int i=0; i<fileSize; i++){
         if ((int)charChecker[i]<0 ||
-            (int)charChecker[i]>128){             //If ASCII is less than 0,
-            delete[] charChecker;               //then the character is not a letter, number, or recognized symbol
+            (int)charChecker[i]>128){
+            delete[] charChecker;
             return true;
         }
     }
-    delete[] charChecker;                       //Free allocated memory
+    delete[] charChecker;
     return false;
 }
 
