@@ -77,6 +77,9 @@ BEGIN_EVENT_TABLE(PasswordSaverUIFrame,wxFrame)
     //*)
 END_EVENT_TABLE()
 
+/**
+ * wxSmith generated Constructor
+ */
 PasswordSaverUIFrame::PasswordSaverUIFrame(wxWindow* parent,wxWindowID id)
 {
     //(*Initialize(PasswordSaverUIFrame)
@@ -162,32 +165,23 @@ PasswordSaverUIFrame::PasswordSaverUIFrame(wxWindow* parent,wxWindowID id)
     Connect(idMenuQuit,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnQuit);
     Connect(idMenuAbout,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnAbout);
     //*)
-    std::string fullFile = dir + mainFile;
-    wxString txt(fullFile.c_str(), wxConvUTF8);
-    FileLabel->SetLabel(wxT("File: ") + txt);
-    file.changeFile(dir, mainFile);
-    /*
-    wxCommandEvent e;
-    if (file.isEncrypted()){
-        OnDecryptButtonClick(e);
-    }
-    */
+    FileLabel->SetLabel(wxT("File: "))
 }
 
+/**
+ * wxSmith generated Destructor
+ */
 PasswordSaverUIFrame::~PasswordSaverUIFrame()
 {
-    /*
-    Encryptor checker;
-    wxCommandEvent e;
-    if (!file.isEncrypted() &&
-        !checker.isEncrypted()){
-        OnEncryptButtonClick(e);
-    }
-    */
     //(*Destroy(PasswordSaverUIFrame)
     //*)
 }
 
+/**
+ * Shows the corresponding dialog box for each Data class generated
+ * enumeration
+ * @param stat - the enumeration provided by a function in the Data class
+ */
 void PasswordSaverUIFrame::showStatusDialog(Data::Success stat){
     wxMessageDialog* dlg;
     std::string fullStr = dir + mainFile;
@@ -209,6 +203,12 @@ void PasswordSaverUIFrame::showStatusDialog(Data::Success stat){
     delete dlg;
 }
 
+/**
+ * Shows the corresponding dialog box for each Encryptor class generated
+ * enumeration
+ * @param stat - the enumeration provided by a function in the Encryptor class
+ * @param encrypting - Was the enumeration returned during encryption or decryption?
+ */
 void PasswordSaverUIFrame::showStatusDialog(Encryptor::Status stat, bool encrypting){
     wxString action = encrypting ? wxT("Encryption") : wxT("Decryption");
     wxMessageDialog* dlg;
@@ -237,17 +237,26 @@ void PasswordSaverUIFrame::showStatusDialog(Encryptor::Status stat, bool encrypt
     delete dlg;
 }
 
+/**
+ * Closes application when quit button in the menu bar is clicked
+ */
 void PasswordSaverUIFrame::OnQuit(wxCommandEvent& event)
 {
     Close();
 }
 
+/**
+ * Shows a message box of the build version when clicking About in the menu
+ */
 void PasswordSaverUIFrame::OnAbout(wxCommandEvent& event)
 {
     wxString msg = wxbuildinfo(long_f);
     wxMessageBox(msg, _("Welcome to..."));
 }
 
+/**
+ * Opens a specified file when clicked
+ */
 void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
 {
     std::fstream temp;
@@ -303,6 +312,11 @@ void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
     }
 }
 
+/**
+ * Adds the string object to the list box
+ * line by line
+ * @param info - the string object to add(whole file or just data structure)
+ */
 void PasswordSaverUIFrame::addToListBox(std::string info){
     FileBox->Clear();
     int previous = 0;
@@ -323,6 +337,9 @@ void PasswordSaverUIFrame::addToListBox(std::string info){
     }
 }
 
+/**
+ * Refreshes the content of the giant list box
+ */
 void PasswordSaverUIFrame::refresh(){
     if (file.isEncrypted()){
         wxMessageDialog error(NULL, wxT("Error: File is encrypted"), wxT("Error"), wxOK | wxICON_ERROR);
@@ -338,6 +355,9 @@ void PasswordSaverUIFrame::refresh(){
     addToListBox(data);
 }
 
+/**
+ * Prompts user to make a new entry into the file when clicked
+ */
 void PasswordSaverUIFrame::OnNewButtonClick(wxCommandEvent& event)
 {
     std::string testStr;
@@ -388,6 +408,9 @@ void PasswordSaverUIFrame::OnNewButtonClick(wxCommandEvent& event)
     if (webLink->IsShown()) webLink->Hide();
 }
 
+/**
+ * Prompts the user to search for an entry when search button is clicked
+ */
 void PasswordSaverUIFrame::OnSearchButtonClick(wxCommandEvent& event)
 {
     std::string testStr;
@@ -441,6 +464,9 @@ void PasswordSaverUIFrame::OnSearchButtonClick(wxCommandEvent& event)
     FileLabel->SetLabel(wxT("File: Searched for login info"));
 }
 
+/**
+ * Displays entire file content to the list box when display button is clicked
+ */
 void PasswordSaverUIFrame::OnDisplayButtonClick(wxCommandEvent& event)
 {
     refresh();
@@ -450,6 +476,9 @@ void PasswordSaverUIFrame::OnDisplayButtonClick(wxCommandEvent& event)
     if (webLink->IsShown()) webLink->Hide();
 }
 
+/**
+ * Prompts user to encrypt the file when encrypt button is clicked
+ */
 void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
 {
     std::string testStr;
@@ -493,6 +522,9 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
     showStatusDialog(stats, true);
 }
 
+/**
+ * Prompts user to decrypt the file when decrypt button is clicked
+ */
 void PasswordSaverUIFrame::OnDecryptButtonClick(wxCommandEvent& event)
 {
     std::string testStr;
@@ -519,6 +551,9 @@ void PasswordSaverUIFrame::OnDecryptButtonClick(wxCommandEvent& event)
     refresh();
 }
 
+/**
+ * Prompts user to delete a specified entry when delete button is clicked
+ */
 void PasswordSaverUIFrame::OnDeleteButtonClick(wxCommandEvent& event)
 {
     std::string testStr;
@@ -551,6 +586,9 @@ void PasswordSaverUIFrame::OnDeleteButtonClick(wxCommandEvent& event)
     if (webLink->IsShown()) webLink->Hide();
 }
 
+/**
+ * Prompts user to edit the content of a file entry when edit button is clicked
+ */
 void PasswordSaverUIFrame::OnEditButtonClick(wxCommandEvent& event)
 {
     std::string testStr;
@@ -599,6 +637,9 @@ void PasswordSaverUIFrame::OnEditButtonClick(wxCommandEvent& event)
     if (webLink->IsShown()) webLink->Hide();
 }
 
+/**
+ * Clears the list box when clear button is clicked
+ */
 void PasswordSaverUIFrame::OnClearButtonClick1(wxCommandEvent& event)
 {
     FileBox->Clear();
