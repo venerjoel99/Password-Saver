@@ -495,9 +495,15 @@ Encryptor::Status Encryptor::decryptHaystack(string password){
     close(keyStream);
     return encryptFile(false, fileName, ivStr, keyStr);
 }
-///TODO: Continue documentation here tomorrow
+
+
 /**
- *
+ * Encrypt/Decrypt a specified file with a given IV and key
+ * @param encrypt - encrypt(true) or decrypt(false)
+ * @param fileName - Full file location
+ * @param ivStr - IV string
+ * @param keyStr - Key string
+ * @return the final enumerated result of the process
  */
 Encryptor::Status Encryptor::encryptFile(bool encrypt, string fileName, string ivStr, string keyStr){
     string fileString = fileStr(fileName);
@@ -519,7 +525,13 @@ Encryptor::Status Encryptor::encryptFile(bool encrypt, string fileName, string i
     return SUCCESS;
 }
 
-
+/**
+ * Perform the whole encryption process on a file
+ * @param usingPIN - PIN(true) or password(false)
+ * @param password - the PIN or password string
+ * @param mainFile - the full file location
+ * @return the enumerated result of the function
+ */
 Encryptor::Status Encryptor::encrypt(bool usingPIN, string password, string mainFile){
     Status stat;
     if (isEncrypted(mainFile) && isEncrypted()) return ENCRYPTED;
@@ -539,6 +551,12 @@ Encryptor::Status Encryptor::encrypt(bool usingPIN, string password, string main
     return stat;
 }
 
+/**
+ * Perform the whole decryption process on a file
+ * @param password - the PIN or password string
+ * @param mainFile - the full file location
+ * @return the enumerated result of the function
+ */
 Encryptor::Status Encryptor::decrypt(string password, string mainFile){
     if (!isEncrypted(mainFile) && !isEncrypted()) return DECRYPTED;
     Status stats = decryptHaystack(password);
