@@ -14,14 +14,24 @@
 
 using namespace std;
 
+/**
+ * Default constructor
+ */
 Encryptor::Encryptor(){
     directory = "";
 }
 
+/**
+ * Constructor with key directory passed
+ */
 Encryptor::Encryptor(string keyDir){
     directory = keyDir;
 };
 
+/**
+ * Opens key.bin
+ * @param write - true if open for write-only, false if open for reading
+ */
 bool Encryptor::openKey(bool write){
     string keyLocation = directory + "key.bin";
     if (keyStream.is_open()) keyStream.close();
@@ -34,6 +44,11 @@ bool Encryptor::openKey(bool write){
     return (keyStream.is_open());
 }
 
+/**
+ * Opens a specified file for write or read mode
+ * @param write - write(true) or read(false) mode
+ * @param fileName - full file name (directory, file, and extension)
+ */
 void Encryptor::open(bool write, string fileName){
     if (mainStream.is_open()) mainStream.close();
     if (write){
@@ -44,15 +59,29 @@ void Encryptor::open(bool write, string fileName){
     }
 }
 
+/**
+ * Opens a file for both write and read operation
+ * @param fileName - full file name
+ */
 void Encryptor::open(string fileName){
     if (mainStream.is_open()) mainStream.close();
     mainStream.open(fileName.c_str(), ios::out|ios::binary|ios::in);
 }
 
+/**
+ * Closes a specified file stream if it is open
+ * @stream the file stream object
+ */
 void Encryptor::close(fstream& stream){
     if (stream.is_open()) stream.close();
 }
 
+/**
+ * "Generate the haystack" by creating 3 key[num].bin
+ *  files.  Each file is created by inserting 10016
+ *  randomly generated characters and 8 random numerical
+ *  digits at the end, resulting each file size of 10024 characters each
+ */
 void Encryptor::generateHayStack(){
     srand(time(0));
     for (int i = 1; i < 4; i++){
@@ -73,8 +102,19 @@ void Encryptor::generateHayStack(){
     }
 }
 
+/**
+ * A 16 character binary file(key.bin) is created that
+ * would be used to encrypt or decrypt the "haystack"
+ * and obtain information as to whether how the encryption is done
+ * The first character is assigned 'T' if a PIN was used and 'F' if
+ * a password was used for encryption.  The second character is assigned
+ * a random number between 1 and 3, which specifies which key[num].bin file
+ * to truly configure for encryption and use for decryption
+ * @param usingPIN - Did the user select the PIN method
+ */
 int Encryptor::generateKeyFile(bool usingPIN){
     char primaryKey[16];
+    ///
     primaryKey[0] = usingPIN ? 'T' : 'F';
     srand(time(0));
     int random = (rand() % 3) + 1;
@@ -90,6 +130,12 @@ int Encryptor::generateKeyFile(bool usingPIN){
     return random;
 }
 
+/**
+ * Return the content of the file
+ * in the form of a string object
+ * @param fileName - full file name
+ * @return the file's content in string
+ */
 string Encryptor::fileStr(string fileName){
     string fileString = "null";
     char stringCreator;                             //Character variable to add on to the string
@@ -109,6 +155,17 @@ string Encryptor::fileStr(string fileName){
     return fileString;
 }
 
+/**
+ * Configures the haystack by changing the specified key[num].bin file's
+ * digit to be configured for encryption.
+ * The 8 digits are configured by:
+ *  -Assigning the 1st, 3rd, 5th, and 7th digits
+ *   random digits to be used as a four-digit index of the IV in the key[num].bin
+ *  -Assigning the 2nd, 4th, 6th, and 8th digits
+ *   digits obtained from XORing the digits of the PIN and a randomly generated number(0-1000) if PIN is used
+ *   or from XORing the digits of the IV index and the random number if a password is used.
+ *
+ */
 void Encryptor::configureHaystack(bool usingPIN, int PIN, int fileNum){
     string num = Convert::intStr(fileNum);
     string hayNum = directory + "key" + num + ".bin";
@@ -137,6 +194,13 @@ void Encryptor::configureHaystack(bool usingPIN, int PIN, int fileNum){
     close(mainStream);
 }
 
+/**
+ * Generates the IV by combining the 1st, 3rd, 5th, and 7th digits
+ * to specify the starting character index.  Then 16 subsequent characters
+ * starting from that index are read to generate a 16-char IV
+ * @param fileNum the number of the key[num].bin file
+ * @return the IV string to be used for Enc/Dec
+ */
 string Encryptor::generateIV(int fileNum){
     string ivStr;
     string num = Convert::intStr(fileNum);
@@ -157,6 +221,23 @@ string Encryptor::generateIV(int fileNum){
     return Convert::arrayStr(finalIV, sizeof(finalIV));
 }
 
+/**
+ * Generates the key by:
+ *   - XORing the PIN digits(PIN method) or IV index(password method) with the
+ *     arbitrary digits(2nd, 4th, 6th, and 8th) to generate the Key index
+ *   - The arbitrary digits are then used to specify which 4 blocks of 4 characters to
+ *     use to make the 16-char key
+ *     Exmaple:
+ *         - Key: 1324, arbDigits: 1, 4, 5, 2
+ *         - key = block of 4[index: 1324 + 1]
+ *                  + block of 4[index: 1324 + 4]
+ *                  + block of 4[index: 1324 + 5]
+ *                  + block of 4[index: 1324 + 2]
+ * @param usingPIN - whether the user uses the PIN or password
+ * @param PIN - the four digit PIN(if usingPIN is false, any number can be put in)
+ * @param fileNum - the number of the key[num].bin file
+ * @return the generated 16 char key
+ */
 string Encryptor::generateKey(bool usingPIN, int PIN, int fileNum){
     string num = Convert::intStr(fileNum);
     string keyFile = directory + "key" + num + ".bin";
@@ -201,6 +282,11 @@ string Encryptor::generateKey(bool usingPIN, int PIN, int fileNum){
     return Convert::arrayStr(finalKey, sizeof(finalKey));
 }
 
+/**
+ * Checks if the haystack files themselves are all encrypted or not
+ * by checking if each character's integer value is between 0 and 127
+ * @return whether all 3 files are encyrpted or not
+ */
 bool Encryptor::isEncrypted(){
     bool encrypted[3];
     for (int i = 0; i < 3; i++){
@@ -225,6 +311,12 @@ bool Encryptor::isEncrypted(){
     return (encrypted[0] && encrypted[1] && encrypted[2]);
 }
 
+/**
+ * Checks if the file is encrypted by checking each integer value
+ * of each character in the file
+ * @param fileName - the full file location
+ * @return whether the file is encrypted or not
+ */
 bool Encryptor::isEncrypted(string fileName){
     open(false, fileName);
     string dataFeed = fileStr(fileName);
@@ -244,6 +336,14 @@ bool Encryptor::isEncrypted(string fileName){
     return false;
 }
 
+/**
+ * Encrypt the text
+ * @param encrypt - encrypt(true) or decrypt(false)
+ * @param text - plain or cipher text
+ * @param ivStr - the IV string
+ * @param keyStr - the Key string
+ * @return the resulting string from encryption/decryption
+ */
 string Encryptor::encryptText(bool encrypt, string text, string ivStr, string keyStr){
     string plaintext, ciphertext;
     char keyArray[keyStr.size()], ivArray[ivStr.size()];
@@ -256,6 +356,8 @@ string Encryptor::encryptText(bool encrypt, string text, string ivStr, string ke
     byte key[ CryptoPP::AES::DEFAULT_KEYLENGTH ], iv[ CryptoPP::AES::BLOCKSIZE ];
     memmove(key, keyArray,  CryptoPP::AES::DEFAULT_KEYLENGTH);
     memmove(iv, ivArray, CryptoPP::AES::BLOCKSIZE);
+    ///Source of the following code: https://stackoverflow.com/questions/12306956/example-of-aes-using-crypto
+    ///Begin cited code
     if (encrypt){
         plaintext = text;
         CryptoPP::AES::Encryption aesEncryption(key, CryptoPP::AES::DEFAULT_KEYLENGTH);
@@ -274,6 +376,7 @@ string Encryptor::encryptText(bool encrypt, string text, string ivStr, string ke
         stfDecryptor.MessageEnd();
         return plaintext;
     }
+    ///End of the cited code
     string result = "";
     if (encrypt){
         result = text;
@@ -289,6 +392,10 @@ string Encryptor::encryptText(bool encrypt, string text, string ivStr, string ke
     return result;
 }
 
+/**
+ * Finds the size of the file opened in the file stream
+ *
+ */
 int Encryptor::findSize(fstream& file){
     if (file.is_open()){
         int beginning, ending;
@@ -302,6 +409,11 @@ int Encryptor::findSize(fstream& file){
     return -1;
 }
 
+/**
+ * Retrieves the 16-char key from key.bin to be used
+ * to encrypt/decrypt the haystack
+ *
+ */
 std::string Encryptor::retrieveKey(bool encrypting, bool usedPIN, string password){
     openKey(false);
     char keyArray[16];
@@ -339,6 +451,9 @@ std::string Encryptor::retrieveKey(bool encrypting, bool usedPIN, string passwor
     return keyStr;
 }
 
+/**
+ * Encrypt the 3 haystack files(key[num].bin);
+ */
 Encryptor::Status Encryptor::encryptHaystack(bool usingPIN, string password){
     string keyStr = retrieveKey(true, usingPIN, password);
     string ivStr = "abcdefghijklmnop";
@@ -355,8 +470,10 @@ Encryptor::Status Encryptor::encryptHaystack(bool usingPIN, string password){
     return stat;
 }
 
+/**
+ * Decrypt the correct haystack file to be used to decrypt the main file
+ */
 Encryptor::Status Encryptor::decryptHaystack(string password){
-    ///PUT KEY NOT FOUND HERE
     if (!openKey(false)) return KEY_NOT_FOUND;
     char info[2];
     keyStream.seekg(0, ios::beg);
@@ -378,14 +495,12 @@ Encryptor::Status Encryptor::decryptHaystack(string password){
     close(keyStream);
     return encryptFile(false, fileName, ivStr, keyStr);
 }
-
+///TODO: Continue documentation here tomorrow
+/**
+ *
+ */
 Encryptor::Status Encryptor::encryptFile(bool encrypt, string fileName, string ivStr, string keyStr){
     string fileString = fileStr(fileName);
-    /*
-    if (Encryptor::isEncrypted(fileString)==encrypt){
-        return Encryptor::isEncrypted(fileString) ? ENCRYPTED : DECRYPTED;
-    }
-    */
     string result;
     try{
         result = encryptText(encrypt, fileString, ivStr, keyStr);
