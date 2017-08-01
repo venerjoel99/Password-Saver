@@ -165,7 +165,7 @@ PasswordSaverUIFrame::PasswordSaverUIFrame(wxWindow* parent,wxWindowID id)
     Connect(idMenuQuit,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnQuit);
     Connect(idMenuAbout,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnAbout);
     //*)
-    FileLabel->SetLabel(wxT("File: "))
+    FileLabel->SetLabel(wxT("File: "));
 }
 
 /**

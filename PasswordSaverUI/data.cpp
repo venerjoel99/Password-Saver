@@ -1,13 +1,11 @@
+#include "data.h"
+#include "Encryptor.h"
 #include <fstream>
 #include <string>
 #include <iostream>
-#include "data.h"
-#include "Encryptor.h"
-
-using namespace std;
 
 ///Constructor for Info class
-Info::Info(string website, string username, string password){
+Info::Info(std::string website, std::string username, std::string password){
     this->website = website;
     this->username = username;
     this->password = password;
@@ -17,19 +15,19 @@ Info::Info(string website, string username, string password){
  * Static function for prompting user input
  * @return The user's input's string
  */
-string Info::input(){
-    string info;
-    cin.sync();
-    getline(cin, info);
+std::string Info::input(){
+    std::string info;
+    std::cin.sync();
+    getline(std::cin, info);
     return info;
 }
 
 /**
- * Converts info object into string object
+ * Converts info object into std::string object
  * @return Converted info string
  */
-string Info::toStr(){
-    string infoString =
+std::string Info::toStr(){
+    std::string infoString =
     "Website: " + website + "\n"
     + "Username: " + username + "\n"
     + "Password: " + password + "\n";
@@ -37,7 +35,7 @@ string Info::toStr(){
 }
 
 ///Writes objects into text files
-fstream& operator<<(fstream& streaming, Info info){
+std::fstream& operator<<(std::fstream& streaming, Info info){
     if (streaming.is_open()){
         streaming << info.getWebsite() << std::endl;
         streaming << info.getUsername() << std::endl;
@@ -51,13 +49,13 @@ fstream& operator<<(fstream& streaming, Info info){
  * Finds the size of the file in the file stream object
  * @return File size in bytes
  */
-int findSize(fstream& file){
+int findSize(std::fstream& file){
     if (file.is_open()){
         int beginning, ending;
-        file.seekg(0, ios::beg);     //Put file character getter in the beginning
-        file.seekp(0, ios::beg);
+        file.seekg(0, std::ios::beg);     //Put file character getter in the beginning
+        file.seekp(0, std::ios::beg);
         beginning = file.tellg();    //Assign the beginning index
-        file.seekg(0, ios::end);     //Put getter in the end
+        file.seekg(0, std::ios::end);     //Put getter in the end
         ending = file.tellg();       //Assign the end index
         return ending - beginning;      //Difference in the two numbers determines size in bytes
     }
@@ -65,23 +63,18 @@ int findSize(fstream& file){
 }
 
 ///Inputs text file content into string
-fstream& operator>>(fstream& stream, string& fileString){
+std::fstream& operator>>(std::fstream& stream, std::string& fileString){
     if (stream.is_open()){
-        fileString = "null";
+        fileString = "";
         char stringCreator;                             //Character variable to add on to the string
         int fileSize = findSize(stream);  //Determine file size
         for (int i = 0; i < fileSize; i++){
             stream.seekg(i);                         //put getter at the index
             stream.get(stringCreator);               //assign the content to the character
-            //if (stringCreator=='\n') i++;
             if ((int)stringCreator==0) {
                 continue;
             }
-            if (fileString=="null") {
-                fileString = stringCreator;             //If not created yet, the first character is assigned to the string
-                                                //Makes sure that it does not go on to adding the first character to the string twice
-            }
-            else fileString += stringCreator;                //Add on to the string
+            fileString += stringCreator;
         }
     }
     else return stream;
@@ -122,22 +115,22 @@ Data::~Data(){
 bool Data::open(OpenMode mode){
     if (currentMode==mode && isOpen()) return theFile.is_open();
     close();
-    string fullFile = fileDir + fileName;
+    std::string fullFile = fileDir + fileName;
     switch(mode){
         case REGULAR:
-            theFile.open(fullFile.c_str(), ios::out | ios::in | ios::app | ios::binary);
+            theFile.open(fullFile.c_str(), std::ios::out | std::ios::in | std::ios::app | std::ios::binary);
             break;
         case ENCRYPTION:
-            theFile.open(fullFile.c_str(), ios::out | ios::in | ios::binary);
+            theFile.open(fullFile.c_str(), std::ios::out | std::ios::in | std::ios::binary);
             break;
         case REWRITE:
-            theFile.open(fullFile.c_str(), ios::out|ios::binary|ios::trunc);
+            theFile.open(fullFile.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
             break;
         case READ_ONLY:
-            theFile.open(fullFile.c_str(), ios::in|ios::binary|ios::ate);
+            theFile.open(fullFile.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
             break;
         default:
-            theFile.open(fullFile.c_str(), ios::out | ios::in | ios::app | ios::binary);
+            theFile.open(fullFile.c_str(), std::ios::out | std::ios::in | std::ios::app | std::ios::binary);
     }
     currentMode = mode;
     return theFile.is_open();
@@ -159,9 +152,9 @@ void Data::close(){
  * @return the index of the first character of the word
  * or -1 if no result is found
  */
-int Data::searchEngine(string keyword){
+int Data::searchEngine(std::string keyword){
     if (!open(REGULAR)) return -1;
-    string result;
+    std::string result;
     int index = 0;
     //Let user type the search word
     //Find the size of the file
@@ -178,15 +171,15 @@ int Data::searchEngine(string keyword){
             //cout << "No results found\n";
             return -1;
         }
-        theFile.seekg(i, ios::beg);       //Put getter at the index
+        theFile.seekg(i, std::ios::beg);       //Put getter at the index
         theFile.get(character);           //Assign the variable the character
         if (character==compared && i > 0){
-            theFile.seekg(i-1, ios::beg);
+            theFile.seekg(i-1, std::ios::beg);
             theFile.get(newLine);
             if ((int)newLine!=0 && newLine!='\n') continue;
         }
         //If the letter at that index matches the input's character, this loop will keep adding characters until
-        //the inputted string and the created string match which confirms the location of the keyword
+        //the inputted std::string and the created std::string match which confirms the location of the keyword
         while ((compared==character)&&(index<length)){
             compared = keyword.at(index);   //Assign letter of the inputted keyword into the input character variable
             theFile.seekg(i + index);     //Put getter a certain number away from the first match of characters
@@ -215,11 +208,11 @@ int Data::searchEngine(string keyword){
 Info Data::read(int position){
     //Info result;    //class object to be returned
     //If file is open and index is not negative
-    string website, username, password;
+    std::string website, username, password;
     if (open(REGULAR) && position >= 0){
         int enterCount = 0; //Determines if it adds to credential, username, or password
         int consecutiveEnters = 0;  //If it equals two, then username or password was entered
-        char indicator; //character variable that adds into string variables
+        char indicator; //character variable that adds into std::string variables
         //set strings to null for first characters to be added
         website = username = password = "null";
         position--; //decrease by 1 before starting the loop so loop starts at 0.
@@ -228,7 +221,7 @@ Info Data::read(int position){
             theFile.seekg(position);
             theFile.get(indicator);   //place getter and assign the character there
             if (indicator=='\n'){
-                enterCount++;   //if newline is reached, then add 1 to change string variable to be added on
+                enterCount++;   //if newline is reached, then add 1 to change std::string variable to be added on
                 consecutiveEnters++;    //increment the consecutive enters to keep track of error
                 //if the search function returned the keyword index but the 2 consecutive enters have been reached,
                 //this means that the username or password was entered
@@ -241,7 +234,7 @@ Info Data::read(int position){
             else {
                 //If not newline, set this to zero to every time to rid of the streak
                 consecutiveEnters = 0;
-                //Add character to credential string if zero newlines have been passed through
+                //Add character to credential std::string if zero newlines have been passed through
                 if (enterCount==0){
                     if (website=="null"){
                         website = indicator;
@@ -291,9 +284,9 @@ bool Data::isOpen(){
 int Data::findSize(){
     if (open(REGULAR)){
         int beginning, ending;
-        theFile.seekg(0, ios::beg);     //Put file character getter in the beginning
+        theFile.seekg(0, std::ios::beg);     //Put file character getter in the beginning
         beginning = theFile.tellg();    //Assign the beginning index
-        theFile.seekg(0, ios::end);     //Put getter in the end
+        theFile.seekg(0, std::ios::end);     //Put getter in the end
         ending = theFile.tellg();       //Assign the end index
         return ending - beginning;      //Difference in the two numbers determines size in bytes
     }
@@ -306,7 +299,7 @@ int Data::findSize(){
  * @param searchWord - the keyword to search in the file
  * @return the Info data structure result if any
  */
-Info Data::findSearch(string searchWord){
+Info Data::findSearch(std::string searchWord){
     return read(searchEngine(searchWord));
 }
 
@@ -324,11 +317,11 @@ Data::Success Data::writeIntoFile(Info info){
 }
 
 /**
- * Read the file content into a string object
- * @param dataString - the string object to insert file content into
+ * Read the file content into a std::string object
+ * @param datastd::string - the std::string object to insert file content into
  * @return the resulting status of the function
  */
-Data::Success Data::readFromFile(string& dataString){
+Data::Success Data::readFromFile(std::string& dataString){
     if(open(REGULAR)){
         theFile >> dataString;
         return SUCCESS;
@@ -369,8 +362,8 @@ Data::Success Data::changeFile(std::string newFile, bool clearDir){
  * @param flag - US(change username) or PS(change password)
  * @return the result of the function
  */
-Data::Success Data::changeInfo(string website, string info, Change flag){
-    string fileString;
+Data::Success Data::changeInfo(std::string website, std::string info, Change flag){
+    std::string fileString;
     Success result = readFromFile(fileString);
     if (result!=SUCCESS){
         return result;
@@ -380,7 +373,7 @@ Data::Success Data::changeInfo(string website, string info, Change flag){
     char indicator;
     position = searchEngine(website);
     if (position==-1) return NO_RESULTS;
-    string sub1 = fileString.substr(0,position);
+    std::string sub1 = fileString.substr(0,position);
     Info old = read(position);
     while (enterCount<4){
         position++;
@@ -389,11 +382,11 @@ Data::Success Data::changeInfo(string website, string info, Change flag){
         enterCount += indicator=='\n' ? 1 : 0;
     }
     position++;
-    string sub2 = fileString.substr(position, fileString.size()-position);
+    std::string sub2 = fileString.substr(position, fileString.size()-position);
     Info newInfo(old.getWebsite(),
                  (flag==US) ? info : old.getUsername(),
                  (flag==PS) ? info : old.getPassword());
-    string newFileString;
+    std::string newFileString;
     if (flag!=DE){
         newFileString = sub1 + newInfo.getWebsite()
         + "\n" + newInfo.getUsername() + "\n"
@@ -420,7 +413,7 @@ Data::Success Data::changeInfo(string website, string info, Change flag){
  * @param newPassword - the new password
  * @return the enumerated result of the function
  */
-Data::Success Data::changeInfo(string website, string newUsername, string newPassword){
+Data::Success Data::changeInfo(std::string website, std::string newUsername, std::string newPassword){
     Success stat = changeInfo(website, newUsername, US);
     if (stat!=SUCCESS) return stat;
     return changeInfo(website, newPassword, PS);
@@ -432,7 +425,7 @@ Data::Success Data::changeInfo(string website, string newUsername, string newPas
  * @param passcode - the PIN or password string
  * @return the Encryptor class generated enumeration result
  */
-Encryptor::Status Data::encrypt(bool usePin, string passcode){
+Encryptor::Status Data::encrypt(bool usePin, std::string passcode){
     int periodPos = fileName.find('.');
     std::string keyFolder = periodPos!=std::string::npos ?
         fileDir + fileName.substr(0, periodPos) + "/" :
@@ -448,9 +441,9 @@ Encryptor::Status Data::encrypt(bool usePin, string passcode){
  * @param passcode - the PIN or password string
  * @return the Encryptor class generated enumeration result
  */
-Encryptor::Status Data::decrypt(string passcode){
+Encryptor::Status Data::decrypt(std::string passcode){
     int periodPos = fileName.find('.');
-    std::string keyFolder = periodPos!=std::string::npos ?
+    std::string keyFolder = (periodPos!=std::string::npos) ?
         fileDir + fileName.substr(0, periodPos) + "/" :
         fileDir + fileName + "/";
     Encryptor aes(keyFolder);
@@ -464,7 +457,7 @@ Encryptor::Status Data::decrypt(string passcode){
  */
 void Data::encrypt(bool state){
     int periodPos = fileName.find('.');
-    std::string keyFolder = periodPos!=std::string::npos ?
+    std::string keyFolder = (periodPos!=std::string::npos) ?
         fileDir + fileName.substr(0, periodPos) + "/" :
         fileDir + fileName + "/";
     Encryptor obj(keyFolder);
@@ -481,7 +474,7 @@ void Data::encrypt(bool state){
  * Gets the current full file location
  * @return the file directory, name, and extension
  */
-string Data::getFileName(){
+std::string Data::getFileName(){
     return fileDir + fileName;
 }
 
