@@ -88,25 +88,36 @@ fstream& operator>>(fstream& stream, string& fileString){
     return stream;
 }
 
-
+/**
+ * Constructor for Data class
+ * @param file - the file name and extension
+ */
 Data::Data(std::string file){
     fileDir = "";
     fileName = file;
     encrypt(true);
 }
 
+/**
+ * Default constructor for Data class
+ */
 Data::Data(){
     encrypt(true);
 }
 
+/**
+ * Modified destructor for the Data class
+ */
 Data::~Data(){
     if (theFile.is_open()) theFile.close();
     encrypt(true);
 }
 
 /**
- *
- *
+ * Closes the file if it is open
+ * Reopens the file in the specified open mode
+ * @param mode - how the file opened is going to be used
+ * @return whether the file is open
  */
 bool Data::open(OpenMode mode){
     if (currentMode==mode && isOpen()) return theFile.is_open();
@@ -133,8 +144,7 @@ bool Data::open(OpenMode mode){
 }
 
 /**
- *
- *
+ * Closes the file if it is open
  */
 void Data::close(){
     if (isOpen()){
@@ -144,8 +154,10 @@ void Data::close(){
 }
 
 /**
- *
- *
+ * Searches the file for the index of the keyword
+ * @param keyword - the word to be searched in the file
+ * @return the index of the first character of the word
+ * or -1 if no result is found
  */
 int Data::searchEngine(string keyword){
     if (!open(REGULAR)) return -1;
@@ -194,8 +206,11 @@ int Data::searchEngine(string keyword){
 }
 
 /**
- *
- *
+ * Reads 3 lines of the file from a starting index
+ * to generate a data structure of website, username, and password
+ * @param position - the starting index to read characters from
+ * @return an Info data structure object containing website, username, and password
+ * or contains "Null" if no result
  */
 Info Data::read(int position){
     //Info result;    //class object to be returned
@@ -260,16 +275,18 @@ Info Data::read(int position){
 }
 
 /**
- *
- *
+ * Checks if a file is opened
+ * @return whether file is opened and the OpenMode
+ * enum is not closed
  */
 bool Data::isOpen(){
     return currentMode!=CLOSED && theFile.is_open();
 }
 
 /**
- *
- *
+ * Finds the size of the file in
+ * the file stream member
+ * @return the size in number of characters in the file
  */
 int Data::findSize(){
     if (open(REGULAR)){
@@ -284,16 +301,19 @@ int Data::findSize(){
 }
 
 /**
- *
- *
+ * Public function to return an Info data structure
+ * from inserting a search keyword
+ * @param searchWord - the keyword to search in the file
+ * @return the Info data structure result if any
  */
 Info Data::findSearch(string searchWord){
     return read(searchEngine(searchWord));
 }
 
 /**
- *
- *
+ * Write an Info data structure into the file
+ * @param info - the data structure
+ * @return the resulting status of the function
  */
 Data::Success Data::writeIntoFile(Info info){
     if(open(REGULAR)){
@@ -304,8 +324,9 @@ Data::Success Data::writeIntoFile(Info info){
 }
 
 /**
- *
- *
+ * Read the file content into a string object
+ * @param dataString - the string object to insert file content into
+ * @return the resulting status of the function
  */
 Data::Success Data::readFromFile(string& dataString){
     if(open(REGULAR)){
@@ -316,17 +337,25 @@ Data::Success Data::readFromFile(string& dataString){
 }
 
 /**
- *
- *
+ * Changes the file location the file stream opens
+ * @param newDir - the file's folder location
+ * @param newFile - the file name and extension
+ * @return the resulting enumerated status of the function
  */
 Data::Success Data::changeFile(std::string newDir, std::string newFile){
     fileDir = newDir;
     fileName = newFile;
-    cout << fileName << endl;
     if (!open(REGULAR)) return FILE_NOT_FOUND;
     return SUCCESS;
 }
 
+/**
+ * Changes the file location without directory
+ * @param newFile - the file name and extension
+ * @param clearDir - whether to open the file in the same directory
+ *        or open the file with no directory at all
+ * @return the resulting status of the function
+ */
 Data::Success Data::changeFile(std::string newFile, bool clearDir){
     return clearDir ?
         changeFile("", newFile) :
@@ -334,8 +363,11 @@ Data::Success Data::changeFile(std::string newFile, bool clearDir){
 }
 
 /**
- *
- *
+ * Change the info of one of the entries in the file
+ * @param website - the specified website entry to change
+ * @param info - the new information string
+ * @param flag - US(change username) or PS(change password)
+ * @return the result of the function
  */
 Data::Success Data::changeInfo(string website, string info, Change flag){
     string fileString;
@@ -380,12 +412,26 @@ Data::Success Data::changeInfo(string website, string info, Change flag){
     return SUCCESS;
 }
 
+/**
+ * Change the username or password for an entry
+ * in the file
+ * @param website - the website entry to edit
+ * @param newUsername - the new user name
+ * @param newPassword - the new password
+ * @return the enumerated result of the function
+ */
 Data::Success Data::changeInfo(string website, string newUsername, string newPassword){
     Success stat = changeInfo(website, newUsername, US);
     if (stat!=SUCCESS) return stat;
     return changeInfo(website, newPassword, PS);
 }
 
+/**
+ * Encrypt the file with either PIN or passwowrd
+ * @param usePIN - whether to use PIN or password
+ * @param passcode - the PIN or password string
+ * @return the Encryptor class generated enumeration result
+ */
 Encryptor::Status Data::encrypt(bool usePin, string passcode){
     int periodPos = fileName.find('.');
     std::string keyFolder = periodPos!=std::string::npos ?
@@ -397,6 +443,11 @@ Encryptor::Status Data::encrypt(bool usePin, string passcode){
     return aes.encrypt(usePin, passcode, fileDir + fileName);
 }
 
+/**
+ * Decrypt the file with either PIN or passwowrd
+ * @param passcode - the PIN or password string
+ * @return the Encryptor class generated enumeration result
+ */
 Encryptor::Status Data::decrypt(string passcode){
     int periodPos = fileName.find('.');
     std::string keyFolder = periodPos!=std::string::npos ?
@@ -407,6 +458,10 @@ Encryptor::Status Data::decrypt(string passcode){
     return aes.decrypt(passcode, fileDir + fileName);
 }
 
+/**
+ * Encrypt/Decrypt the dummy file
+ * @param state - encrypt(true) or decrypt(false)
+ */
 void Data::encrypt(bool state){
     int periodPos = fileName.find('.');
     std::string keyFolder = periodPos!=std::string::npos ?
@@ -420,13 +475,20 @@ void Data::encrypt(bool state){
     }
     std::string defaultFile = "key0.bin";
     if (!state) changeFile(keyFolder, defaultFile);
-    std::cout << fileName << std::endl;
 }
 
+/**
+ * Gets the current full file location
+ * @return the file directory, name, and extension
+ */
 string Data::getFileName(){
     return fileDir + fileName;
 }
 
+/**
+ * Is the file in the file stream object encrypted?
+ * @return whether it is encrypted
+ */
 bool Data::isEncrypted(){
     Encryptor obj;
     return obj.isEncrypted(fileDir + fileName);
