@@ -346,7 +346,7 @@ void PasswordSaverUIFrame::refresh(){
         return;
     }
     std::string data;
-    Data::Success stat = file.readFromFile(data);    //Overloaded operator>> inputs file into a string
+    Data::Success stat = file.readFromFile(data);
     if (stat==Data::FILE_NOT_FOUND){
         showStatusDialog(stat);
         return;
@@ -391,7 +391,7 @@ void PasswordSaverUIFrame::OnNewButtonClick(wxCommandEvent& event)
         stat = file.changeInfo(website, username, password);
     }
     else{
-        Info info(website + "(" + urlStr + ")", username, password);                       //member function enters user inputs into object
+        Info info(website + "(" + urlStr + ")", username, password);
         stat = file.writeIntoFile(info);
     }
     file.close();
@@ -494,7 +494,7 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
     wxPasswordEntryDialog dlg(NULL, wxT("Enter a new password"), wxT("New password"), wxEmptyString,
                                  wxOK | wxCANCEL);
     int confirm = dlg.ShowModal();
-    if (confirm==wxCANCEL) return;
+    if (confirm==wxID_CANCEL) return;
     std::string info = std::string(dlg.GetValue().mb_str());
     wxMessageDialog msg(NULL, wxT("Do you remember your password?"), wxT("Confirm"), wxYES_NO |
                     wxNO_DEFAULT | wxICON_QUESTION);
@@ -529,10 +529,10 @@ void PasswordSaverUIFrame::OnDecryptButtonClick(wxCommandEvent& event)
         showStatusDialog(Encryptor::DECRYPTED, false);
         return;
     }
-    wxPasswordEntryDialog dlg(NULL, wxT("Enter your password or 4-DIGIT PIN"), wxT("Authenticate"), wxEmptyString,
-                                 wxOK /*| wxCANCEL*/);
+    wxPasswordEntryDialog dlg(NULL, wxT("Enter your password"), wxT("Authenticate"), wxEmptyString,
+                                 wxOK | wxCANCEL);
     int confirm = dlg.ShowModal();
-    if (confirm==wxCANCEL) return;
+    if (confirm==wxID_CANCEL) return;
     std::string info = std::string(dlg.GetValue().mb_str());
     Encryptor::Status stats = file.decrypt(info);
     if (stats==Encryptor::WRONG_PASSWORD){
