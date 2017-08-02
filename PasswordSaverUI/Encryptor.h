@@ -1,11 +1,21 @@
 #ifndef ENCRYPTOR_H_INCLUDED
 #define ENCRYPTOR_H_INCLUDED
-#include <fstream>
+
 #include <string>
+#include <fstream>
+#include "aes.h"
 
 class Encryptor{
 private:
-    //int keySize = 16;
+    int keyLength = CryptoPP::AES::DEFAULT_KEYLENGTH;
+    const int keySize1 = CryptoPP::AES::MIN_KEYLENGTH;
+    const int keySize2 = (CryptoPP::AES::MIN_KEYLENGTH +
+        CryptoPP::AES::MAX_KEYLENGTH) / 2;
+    const int keySize3 = CryptoPP::AES::MAX_KEYLENGTH;
+    const int blockSize = CryptoPP::AES::BLOCKSIZE;
+    const int haystackSize = 10000;
+    const int MIN_UNENCRYPTED = 0;
+    const int MAX_UNENCRYPTED = 128;
     std::string directory;
     std::fstream keyStream;
     std::fstream mainStream;

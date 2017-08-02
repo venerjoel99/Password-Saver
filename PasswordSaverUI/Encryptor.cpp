@@ -3,7 +3,6 @@
 #include <string>
 #include <ctime>
 #include <cstdlib>
-#include <iomanip>
 #include <cmath>
 
 #include "modes.h"
@@ -78,7 +77,7 @@ int Encryptor::generatePIN(std::string password){
     char begKeyChar, endKeyChar, begChar, endChar;
     keyStream.seekg(0, std::ios::beg);
     keyStream.get(begKeyChar);
-    keyStream.seekg(15, std::ios::beg);
+    keyStream.seekg(keyLength - 1, std::ios::beg);
     keyStream.get(endKeyChar);
     begChar = password.at(0);
     int size = password.size();
@@ -99,12 +98,13 @@ void Encryptor::generateHayStack(){
     for (int i = 1; i < 4; i++){
         std::string fileName =  directory + "key" + Convert::intStr(i) + ".bin";
         open(true, fileName);
-        char passcode[10024];
-        for (int i=0; i < 10016; i++){
+        int fileSize = haystackSize + blockSize;
+        char passcode[fileSize + 8];
+        for (int i=0; i < fileSize; i++){
             int random = rand()%93;
             passcode[i] = '!' + random;
         }
-        for (int i=10016; i < 10024; i++){
+        for (int i=fileSize; i < fileSize + 8; i++){
             int random = rand()%10;
             char num = Convert::intChar(random);
             passcode[i] = num;
@@ -120,15 +120,15 @@ void Encryptor::generateHayStack(){
  * @param usingPIN - Did the user select the PIN method
  */
 int Encryptor::generateKeyFile(){
-    char primaryKey[16];
+    char primaryKey[keyLength];
     srand(time(0));
-    for (int i = 0; i < 16; i++){
+    for (int i = 0; i < keyLength; i++){
         int random = rand()%93;
         primaryKey[i] = '!' + random;
     }
     if (!openKey(true)) return -1;
     keyStream.seekp(0, std::ios::beg);
-    keyStream.write(primaryKey, 16);
+    keyStream.write(primaryKey, keyLength);
     close(keyStream);
     return ((int)primaryKey[0]) % 3 + 1;
 }
@@ -167,7 +167,8 @@ void Encryptor::configureHaystack(int PIN, int fileNum){
     srand(time(0));
     int ivNum = 0;
     int place = 1000;
-    for (int i=10016; i < 10024; i+=2){
+    int fileSize = haystackSize + blockSize;
+    for (int i=fileSize; i < fileSize + 8; i+=2){
         int random = rand()%10;
         ivNum += (random * place);
         place /= 10;
@@ -177,7 +178,7 @@ void Encryptor::configureHaystack(int PIN, int fileNum){
     int randPIN = rand()%10000;
     int arbNum = Convert::bitwiseXOR(PIN, randPIN);
     place = 1000;
-    for (int i=10017; i < 10024; i+=2){
+    for (int i=fileSize + 1; i < fileSize + 8; i+=2){
         char num;
         num = Convert::intChar(Convert::digit(arbNum, place));
         place /= 10;
@@ -197,7 +198,8 @@ std::string Encryptor::generateIV(int fileNum){
     std::string num = Convert::intStr(fileNum);
     std::string keyFile = directory + "key" + num + ".bin";
     open(false, keyFile);
-    for (int i = 10016; i < 10024; i+=2){
+    int fileSize = haystackSize + blockSize;
+    for (int i = fileSize; i < fileSize + 8; i+=2){
         char digit;
         mainStream.seekg(i, std::ios::beg);
         mainStream.get(digit);
@@ -206,11 +208,11 @@ std::string Encryptor::generateIV(int fileNum){
     }
     int ivPin = atoi(ivLoc.c_str());
     mainStream.seekg(ivPin, std::ios::beg);
-    char finalIV[16];
-    mainStream.read(finalIV, 16);
+    char finalIV[blockSize];
+    mainStream.read(finalIV, blockSize);
     close(mainStream);
     std::string ivStr = "";
-    for (unsigned int i = 0; i < 16; i++){
+    for (unsigned int i = 0; i < blockSize; i++){
         ivStr += finalIV[i];
     }
     return ivStr;
@@ -228,32 +230,38 @@ std::string Encryptor::generateKey(int PIN, int fileNum){
     std::string keyFile = directory + "key" + num + ".bin";
     open(false, keyFile);
     int arbPIN, indexPIN;
-    std::string pinStr;
-    for (int i = 10017; i < 10024; i+=2){
-        char num[1];
+    std::string pinStr = "";
+    int fileSize = haystackSize + blockSize;
+    for (int i = fileSize + 1; i < fileSize + 8; i+=2){
+        char num;
         mainStream.seekg(i, std::ios::beg);
-        mainStream.read(num, 1);
-        if (i==10017) pinStr=num[0];
-        else pinStr+=num[0];
+        mainStream.get(num);
+        pinStr+=num;
     }
     arbPIN = atoi(pinStr.c_str());
     indexPIN = Convert::bitwiseXOR(PIN, arbPIN);
     int place = 1000;
-    char draftKey[4][4];
-    for (int i=0; i<4; i++){
-        mainStream.seekg(indexPIN+Convert::digit(arbPIN, place), std::ios::beg);
+    int place2 = 1000;
+    char draftKey[keyLength / 4][4];
+    srand(time(0));
+    for (int i=0; i < keyLength / 4; i++){
+        int index = (place==0) ?
+            (indexPIN + Convert::digit(PIN, place2)) :
+            (indexPIN + Convert::digit(arbPIN, place));
+        mainStream.seekg(index, std::ios::beg);
         mainStream.read(draftKey[i], 4);
-        place /= 10;
+        if (place!=0) place /= 10;
+        else place2 /= 10;
     }
-    char finalKey[16];
-    for (int i=0; i<4; i++){
+    char finalKey[keyLength];
+    for (int i=0; i < (keyLength/4); i++){
         for (int j=0; j<4; j++){
             finalKey[(4*i)+j] = draftKey[i][j];
         }
     }
     close(mainStream);
     std::string keyStr = "";
-    for (int i=0; i < 16; i++){
+    for (int i=0; i < keyLength; i++){
         keyStr += finalKey[i];
     }
     return keyStr;
@@ -276,8 +284,8 @@ bool Encryptor::isEncrypted(){
         }
         encrypted[i] = false;
         for (int k=0; k<fileSize; k++){
-            if ((int)charChecker[k]<0 ||
-                (int)charChecker[k]>127){
+            if ((int)charChecker[k]< MIN_UNENCRYPTED ||
+                (int)charChecker[k]> MAX_UNENCRYPTED){
                 delete[] charChecker;
                 encrypted[i] = true;
                 break;
@@ -303,8 +311,8 @@ bool Encryptor::isEncrypted(std::string fileName){
         charChecker[i] = dataFeed.at(i);
     }
     for (int i=0; i<fileSize; i++){
-        if ((int)charChecker[i]<0 ||
-            (int)charChecker[i]>128){
+        if ((int)charChecker[i] < MIN_UNENCRYPTED ||
+            (int)charChecker[i] > MAX_UNENCRYPTED){
             delete[] charChecker;
             return true;
         }
@@ -330,14 +338,14 @@ std::string Encryptor::encryptText(bool encrypt, std::string text, std::string i
     for (unsigned int i = 0; i < ivStr.size(); i++){
         ivArray[i] = ivStr.at(i);
     }
-    byte key[ CryptoPP::AES::DEFAULT_KEYLENGTH ], iv[ CryptoPP::AES::BLOCKSIZE ];
-    memmove(key, keyArray,  CryptoPP::AES::DEFAULT_KEYLENGTH);
-    memmove(iv, ivArray, CryptoPP::AES::BLOCKSIZE);
+    byte key[ keyLength ], iv[ blockSize ];
+    memmove(key, keyArray,  keyLength);
+    memmove(iv, ivArray, blockSize);
     ///Source of the following code: https://stackoverflow.com/questions/12306956/example-of-aes-using-crypto
     ///Begin cited code
     if (encrypt){
         plaintext = text;
-        CryptoPP::AES::Encryption aesEncryption(key, CryptoPP::AES::DEFAULT_KEYLENGTH);
+        CryptoPP::AES::Encryption aesEncryption(key, keyLength);
         CryptoPP::CBC_Mode_ExternalCipher::Encryption cbcEncryption( aesEncryption, iv );
         CryptoPP::StreamTransformationFilter stfEncryptor(cbcEncryption, new CryptoPP::StringSink( ciphertext ) );
         stfEncryptor.Put( reinterpret_cast<const unsigned char*>( plaintext.c_str() ), plaintext.length() + 1 );
@@ -346,7 +354,7 @@ std::string Encryptor::encryptText(bool encrypt, std::string text, std::string i
     }
     else{
         ciphertext = text;
-        CryptoPP::AES::Decryption aesDecryption(key, CryptoPP::AES::DEFAULT_KEYLENGTH);
+        CryptoPP::AES::Decryption aesDecryption(key, keyLength);
         CryptoPP::CBC_Mode_ExternalCipher::Decryption cbcDecryption( aesDecryption, iv );
         CryptoPP::StreamTransformationFilter stfDecryptor(cbcDecryption, new CryptoPP::StringSink( plaintext ) );
         stfDecryptor.Put( reinterpret_cast<const unsigned char*>( ciphertext.c_str() ), ciphertext.size() );
@@ -393,23 +401,23 @@ int Encryptor::findSize(std::fstream& file){
  */
 std::string Encryptor::retrieveKey(std::string password){
     openKey(false);
-    char keyArray[16];
-    for (unsigned int i=0; i < 16; i++){
+    char keyArray[keyLength];
+    for (unsigned int i=0; i < keyLength; i++){
         keyStream.seekg(i, std::ios::beg);
         char c;
         keyStream.get(c);
         keyArray[i] = (i>=password.size()) ?
         c : password.at(i);
     }
-    for (unsigned int i = 16; i < password.size(); i++){
-        int index = i % 16;
+    for (unsigned int i = keyLength; i < password.size(); i++){
+        int index = i % keyLength;
         int newValue =
             (((int)keyArray[index]) + ((int)password.at(i))) / 2;
         keyArray[index] = (char)newValue;
     }
     close(keyStream);
     std::string keyStr = "";
-    for (unsigned int i =0; i < 16; i ++){
+    for (unsigned int i =0; i < keyLength; i ++){
         keyStr += keyArray[i];
     }
     return keyStr;
@@ -423,8 +431,7 @@ Encryptor::Status Encryptor::encryptHaystack(std::string password){
     std::string keyStr = retrieveKey(password);
     std::string ivStr = "";
     if (!openKey(false)) return KEY_NOT_FOUND;
-    int size = findSize(keyStream);
-    for (int i = size - 1; i >= 0; i--){
+    for (int i = blockSize - 1; i >= 0; i--){
         char c;
         keyStream.seekg(i, std::ios::beg);
         keyStream.get(c);
@@ -452,19 +459,15 @@ Encryptor::Status Encryptor::decryptHaystack(std::string password){
     info = Convert::intChar((int)info % 3 + 1);
     std::string fileName = directory + "key" + info + ".bin";
     std::string keyStr = retrieveKey(password);
-    std::string ivStr;
-    char ivChar[keyStr.size()];
-    for (unsigned int i = 0; i < keyStr.size(); i++){
-        ivChar[keyStr.size()-1-i] = keyStr.at(i);
-    }
-    for (unsigned int i = 0; i < keyStr.size(); i++){
-        if (i==0){
-            ivStr = ivChar[i];
-        }
-        else ivStr +=ivChar[i];
+    std::string ivStr = "";
+    if (!openKey(false)) return KEY_NOT_FOUND;
+    for (int i = blockSize - 1; i >= 0; i--){
+        char c;
+        keyStream.seekg(i, std::ios::beg);
+        keyStream.get(c);
+        ivStr += c;
     }
     close(keyStream);
-
     return encryptFile(false, fileName, ivStr, keyStr);
 }
 
@@ -507,6 +510,8 @@ Encryptor::Status Encryptor::encryptFile(bool encrypt, std::string fileName, std
 Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile){
     Status stat;
     if (isEncrypted(mainFile) && isEncrypted()) return ENCRYPTED;
+    if (password.size() > keySize1) keyLength = keySize2;
+    if (password.size() > keySize2) keyLength = keySize3;
     generateHayStack();
     int fileNum = generateKeyFile();
     if (fileNum==-1) return KEY_NOT_FOUND;
@@ -528,6 +533,8 @@ Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile)
  */
 Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile){
     if (!isEncrypted(mainFile) && !isEncrypted()) return DECRYPTED;
+    if (password.size() > keySize1) keyLength = keySize2;
+    if (password.size() > keySize2) keyLength = keySize3;
     Status stats = decryptHaystack(password);
     if (stats!=SUCCESS) return stats;
     openKey(false);
@@ -542,11 +549,6 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
     stats = encryptFile(false, mainFile, ivStr, keyStr);
     if (stats!=SUCCESS){
         std::string hayNum = directory + "key" + Convert::intStr(fileNum) + ".bin";
-        openKey(false);
-        char info[2];
-        keyStream.seekg(0, std::ios::beg);
-        keyStream.read(info, 2);
-        close(keyStream);
         keyStr = retrieveKey(password);
         char ivChar[keyStr.size()];
         for (unsigned int i = 0; i < keyStr.size(); i++){
