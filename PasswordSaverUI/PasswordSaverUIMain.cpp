@@ -7,16 +7,15 @@
  * License:
  **************************************************************/
 
-#include "wx_pch.h"
 #include "PasswordSaverUIMain.h"
+#include "wx_pch.h"
 #include <wx/msgdlg.h>
-#include <string>
-#include "data.h"
-#include "Encryptor.h"
 #include <wx/textdlg.h>
 #include <wx/msgdlg.h>
 #include <fstream>
-#include <iostream>
+#include <string>
+#include "data.h"
+#include "Encryptor.h"
 
 //(*InternalHeaders(PasswordSaverUIFrame)
 #include <wx/artprov.h>

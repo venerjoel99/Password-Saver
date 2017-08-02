@@ -52,12 +52,12 @@ std::fstream& operator<<(std::fstream& streaming, Info info){
 int findSize(std::fstream& file){
     if (file.is_open()){
         int beginning, ending;
-        file.seekg(0, std::ios::beg);     //Put file character getter in the beginning
+        file.seekg(0, std::ios::beg);
         file.seekp(0, std::ios::beg);
-        beginning = file.tellg();    //Assign the beginning index
-        file.seekg(0, std::ios::end);     //Put getter in the end
-        ending = file.tellg();       //Assign the end index
-        return ending - beginning;      //Difference in the two numbers determines size in bytes
+        beginning = file.tellg();
+        file.seekg(0, std::ios::end);
+        ending = file.tellg();
+        return ending - beginning;
     }
     return -1;
 }
@@ -66,11 +66,11 @@ int findSize(std::fstream& file){
 std::fstream& operator>>(std::fstream& stream, std::string& fileString){
     if (stream.is_open()){
         fileString = "";
-        char stringCreator;                             //Character variable to add on to the string
-        int fileSize = findSize(stream);  //Determine file size
+        char stringCreator;
+        int fileSize = findSize(stream);
         for (int i = 0; i < fileSize; i++){
-            stream.seekg(i);                         //put getter at the index
-            stream.get(stringCreator);               //assign the content to the character
+            stream.seekg(i);
+            stream.get(stringCreator);
             if ((int)stringCreator==0) {
                 continue;
             }
@@ -156,40 +156,29 @@ int Data::searchEngine(std::string keyword){
     if (!open(REGULAR)) return -1;
     std::string result;
     int index = 0;
-    //Let user type the search word
-    //Find the size of the file
     int fileSize = findSize();
-    //Find the size of the keyword
     int length = keyword.size();
-    //Variables for the for loop
     char compared, character, newLine;
     for(int i = 0; i<fileSize; i++){
-        //Set the first letter of keyword as comparison
         compared = keyword.at(index);
-        //If it reaches the end, let user know there is no results for the keyword
         if (i==fileSize-1){
-            //cout << "No results found\n";
             return -1;
         }
-        theFile.seekg(i, std::ios::beg);       //Put getter at the index
-        theFile.get(character);           //Assign the variable the character
+        theFile.seekg(i, std::ios::beg);
+        theFile.get(character);
         if (character==compared && i > 0){
             theFile.seekg(i-1, std::ios::beg);
             theFile.get(newLine);
             if ((int)newLine!=0 && newLine!='\n') continue;
         }
-        //If the letter at that index matches the input's character, this loop will keep adding characters until
-        //the inputted std::string and the created std::string match which confirms the location of the keyword
         while ((compared==character)&&(index<length)){
-            compared = keyword.at(index);   //Assign letter of the inputted keyword into the input character variable
-            theFile.seekg(i + index);     //Put getter a certain number away from the first match of characters
-            theFile.get(character);       //Assign letter of the file content into the file character variable
-            if (index==0){result = character;}  //If it's the first match, create the array of characters
-            else {result += character;}         //If not, add on to the array
+            compared = keyword.at(index);
+            theFile.seekg(i + index);
+            theFile.get(character);
+            if (index==0){result = character;}
+            else {result += character;}
             index++;
         }
-        //If the keyword user entered matches the result created by the program,
-        //return the starting location of the keyword in the file
         if (keyword==result){
             return i;
         }
@@ -206,49 +195,40 @@ int Data::searchEngine(std::string keyword){
  * or contains "Null" if no result
  */
 Info Data::read(int position){
-    //Info result;    //class object to be returned
-    //If file is open and index is not negative
     std::string website, username, password;
     if (open(REGULAR) && position >= 0){
-        int enterCount = 0; //Determines if it adds to credential, username, or password
-        int consecutiveEnters = 0;  //If it equals two, then username or password was entered
-        char indicator; //character variable that adds into std::string variables
-        //set strings to null for first characters to be added
+        int enterCount = 0;
+        int consecutiveEnters = 0;
+        char indicator;
         website = username = password = "null";
-        position--; //decrease by 1 before starting the loop so loop starts at 0.
+        position--;
         while (enterCount < 3){
             position++;
             theFile.seekg(position);
-            theFile.get(indicator);   //place getter and assign the character there
+            theFile.get(indicator);
             if (indicator=='\n'){
-                enterCount++;   //if newline is reached, then add 1 to change std::string variable to be added on
-                consecutiveEnters++;    //increment the consecutive enters to keep track of error
-                //if the search function returned the keyword index but the 2 consecutive enters have been reached,
-                //this means that the username or password was entered
+                enterCount++;
+                consecutiveEnters++;
                 if (consecutiveEnters > 1){
-                    //Give user nulls for being stupid not to follow directions
                     Info nullResult("Null", "No", "Result");
                     return nullResult;
                 }
             }
             else {
-                //If not newline, set this to zero to every time to rid of the streak
                 consecutiveEnters = 0;
-                //Add character to credential std::string if zero newlines have been passed through
                 if (enterCount==0){
                     if (website=="null"){
                         website = indicator;
                     }
                     else website +=indicator;
                 }
-                //Add to username if newline has been reached once
+
                 else if(enterCount==1){
                     if (username=="null"){
                         username = indicator;
                     }
                     else username +=indicator;
                 }
-                //Add to password if newline has been reached twice
                 else if(enterCount==2){
                     if (password=="null"){
                         password = indicator;
@@ -260,7 +240,6 @@ Info Data::read(int position){
     }
     else {
         Info nullInfo("Null", "No", "Result");
-        //cout << "File not found\n";
         return nullInfo;
     }
     Info result(website, username, password);
@@ -284,11 +263,11 @@ bool Data::isOpen(){
 int Data::findSize(){
     if (open(REGULAR)){
         int beginning, ending;
-        theFile.seekg(0, std::ios::beg);     //Put file character getter in the beginning
-        beginning = theFile.tellg();    //Assign the beginning index
-        theFile.seekg(0, std::ios::end);     //Put getter in the end
-        ending = theFile.tellg();       //Assign the end index
-        return ending - beginning;      //Difference in the two numbers determines size in bytes
+        theFile.seekg(0, std::ios::beg);
+        beginning = theFile.tellg();
+        theFile.seekg(0, std::ios::end);
+        ending = theFile.tellg();
+        return ending - beginning;
     }
     return -1;
 }
@@ -426,7 +405,7 @@ Data::Success Data::changeInfo(std::string website, std::string newUsername, std
  * @return the Encryptor class generated enumeration result
  */
 Encryptor::Status Data::encrypt(bool usePin, std::string passcode){
-    int periodPos = fileName.find('.');
+    unsigned int periodPos = fileName.find('.');
     std::string keyFolder = periodPos!=std::string::npos ?
         fileDir + fileName.substr(0, periodPos) + "/" :
         fileDir + fileName + "/";
@@ -442,7 +421,7 @@ Encryptor::Status Data::encrypt(bool usePin, std::string passcode){
  * @return the Encryptor class generated enumeration result
  */
 Encryptor::Status Data::decrypt(std::string passcode){
-    int periodPos = fileName.find('.');
+    unsigned int periodPos = fileName.find('.');
     std::string keyFolder = (periodPos!=std::string::npos) ?
         fileDir + fileName.substr(0, periodPos) + "/" :
         fileDir + fileName + "/";
@@ -456,7 +435,7 @@ Encryptor::Status Data::decrypt(std::string passcode){
  * @param state - encrypt(true) or decrypt(false)
  */
 void Data::encrypt(bool state){
-    int periodPos = fileName.find('.');
+    unsigned int periodPos = fileName.find('.');
     std::string keyFolder = (periodPos!=std::string::npos) ?
         fileDir + fileName.substr(0, periodPos) + "/" :
         fileDir + fileName + "/";
