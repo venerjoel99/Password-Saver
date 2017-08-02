@@ -8,10 +8,10 @@
 class Encryptor{
 private:
     int keyLength = CryptoPP::AES::DEFAULT_KEYLENGTH;
-    const int keySize1 = CryptoPP::AES::MIN_KEYLENGTH;
-    const int keySize2 = (CryptoPP::AES::MIN_KEYLENGTH +
+    const unsigned int keySize1 = CryptoPP::AES::MIN_KEYLENGTH;
+    const unsigned int keySize2 = (CryptoPP::AES::MIN_KEYLENGTH +
         CryptoPP::AES::MAX_KEYLENGTH) / 2;
-    const int keySize3 = CryptoPP::AES::MAX_KEYLENGTH;
+    const unsigned int keySize3 = CryptoPP::AES::MAX_KEYLENGTH;
     const int blockSize = CryptoPP::AES::BLOCKSIZE;
     const int haystackSize = 10000;
     const int MIN_UNENCRYPTED = 0;
@@ -21,8 +21,9 @@ private:
     std::fstream mainStream;
     int findSize(std::fstream&);
     void generateHayStack(void);
-    int generateKeyFile();
     void configureHaystack(int, int);
+    int generatePIN(std::string);
+    int generateKeyFile();
     std::string generateKey(int, int);
     std::string generateIV(int);
     bool openKey(bool);
@@ -31,7 +32,6 @@ private:
     void close(std::fstream&);
     std::string retrieveKey(std::string);
     std::string fileStr(std::string);
-    int generatePIN(std::string);
 public:
     Encryptor(void);
     Encryptor(std::string);
@@ -49,7 +49,6 @@ public:
     };
     bool isEncrypted(std::string);
     bool isEncrypted(void);
-    //bool isEncrypted(void);
 private:
     Status encryptHaystack(std::string);
     Status decryptHaystack(std::string);
