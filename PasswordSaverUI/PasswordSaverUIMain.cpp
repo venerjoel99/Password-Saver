@@ -226,8 +226,11 @@ void PasswordSaverUIFrame::showStatusDialog(Encryptor::Status stat, bool encrypt
     case Encryptor::ENCRYPTED:
         dlg = new wxMessageDialog(NULL, wxT("This file is already encrypted!"), wxT("Warning"), wxOK);
         break;
-     case Encryptor::DECRYPTED:
+    case Encryptor::DECRYPTED:
         dlg = new wxMessageDialog(NULL, wxT("File is already decrypted!"), wxT("Warning"), wxOK);
+        break;
+    case Encryptor::FILE_NOT_FOUND:
+        dlg = new wxMessageDialog(NULL, wxT("A file is missing!"), wxT("Warning"), wxOK);
         break;
     default:
         dlg = new wxMessageDialog(NULL, wxT("Error: Unknown"), wxT("Error"), wxOK);

@@ -26,9 +26,11 @@ private:
     int generateKeyFile();
     std::string generateKey(int, int);
     std::string generateIV(int);
-    bool openKey(bool);
+    void openKey(bool);
     void open(bool, std::string);
     void open(std::string);
+    void open(bool, int);
+    void open(int);
     void close(std::fstream&);
     std::string retrieveKey(std::string);
     std::string fileStr(std::string);
@@ -45,7 +47,8 @@ public:
         ENCRYPTED,
         DECRYPTED,
         WRONG_PASSWORD,
-        KEY_NOT_FOUND
+        KEY_NOT_FOUND,
+        FILE_NOT_FOUND
     };
     bool isEncrypted(std::string);
     bool isEncrypted(void);
