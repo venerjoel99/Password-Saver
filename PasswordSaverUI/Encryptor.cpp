@@ -4,6 +4,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <iomanip>
+#include <cmath>
 
 #include "modes.h"
 #include "aes.h"
@@ -72,6 +73,24 @@ void Encryptor::close(std::fstream& stream){
     if (stream.is_open()) stream.close();
 }
 
+int Encryptor::generatePIN(std::string password){
+    if (!openKey(false)) return -1;
+    char begKeyChar, endKeyChar, begChar, endChar;
+    keyStream.seekg(0, std::ios::beg);
+    keyStream.get(begKeyChar);
+    keyStream.seekg(15, std::ios::beg);
+    keyStream.get(endKeyChar);
+    begChar = password.at(0);
+    int size = password.size();
+    endChar = password.at(size - 1);
+    int PIN = 0;
+    PIN += (((int)pow((int)begKeyChar, 2.0) ^ (int)pow((int)begChar, 2.0)) % 10) * 1000;
+    PIN += (((int)pow((int)endKeyChar, 2.0) ^ (int)pow((int)endChar, 2.0)) % 10) * 100;
+    PIN += (((int)pow((int)begKeyChar, 2.0) ^ (int)pow((int)endKeyChar, 2.0)) % 10) * 10;
+    PIN += ((int)pow(2.0, size) ^ (int)pow(size, 3.0)) % 10;
+    return PIN;
+}
+
 /**
  * Create 3 key[num].bin files(see readme)
  */
@@ -100,14 +119,10 @@ void Encryptor::generateHayStack(){
  * to encrypt/decrypt the key[num].bin files(see readme)
  * @param usingPIN - Did the user select the PIN method
  */
-int Encryptor::generateKeyFile(bool usingPIN){
+int Encryptor::generateKeyFile(){
     char primaryKey[16];
-    ///
-    primaryKey[0] = usingPIN ? 'T' : 'F';
     srand(time(0));
-    int random = (rand() % 3) + 1;
-    primaryKey[1] = Convert::intChar(random);
-    for (int i = 2; i < 16; i++){
+    for (int i = 0; i < 16; i++){
         int random = rand()%93;
         primaryKey[i] = '!' + random;
     }
@@ -115,7 +130,7 @@ int Encryptor::generateKeyFile(bool usingPIN){
     keyStream.seekp(0, std::ios::beg);
     keyStream.write(primaryKey, 16);
     close(keyStream);
-    return random;
+    return ((int)primaryKey[0]) % 3 + 1;
 }
 
 /**
@@ -145,7 +160,7 @@ std::string Encryptor::fileStr(std::string fileName){
  * @param PIN - user-entered PIN or any number(if no PIN entered)
  * @param fileNum - the number of the key[num].bin file to be used
  */
-void Encryptor::configureHaystack(bool usingPIN, int PIN, int fileNum){
+void Encryptor::configureHaystack(int PIN, int fileNum){
     std::string num = Convert::intStr(fileNum);
     std::string hayNum = directory + "key" + num + ".bin";
     open(hayNum);
@@ -160,8 +175,7 @@ void Encryptor::configureHaystack(bool usingPIN, int PIN, int fileNum){
         mainStream.put(Convert::intChar(random));
     }
     int randPIN = rand()%10000;
-    int arbNum = usingPIN ? Convert::bitwiseXOR(PIN, randPIN) :
-        Convert::bitwiseXOR(ivNum, randPIN);
+    int arbNum = Convert::bitwiseXOR(PIN, randPIN);
     place = 1000;
     for (int i=10017; i < 10024; i+=2){
         char num;
@@ -179,7 +193,7 @@ void Encryptor::configureHaystack(bool usingPIN, int PIN, int fileNum){
  * @return the IV std::string to be used for Enc/Dec
  */
 std::string Encryptor::generateIV(int fileNum){
-    std::string ivStr;
+    std::string ivLoc;
     std::string num = Convert::intStr(fileNum);
     std::string keyFile = directory + "key" + num + ".bin";
     open(false, keyFile);
@@ -187,15 +201,19 @@ std::string Encryptor::generateIV(int fileNum){
         char digit;
         mainStream.seekg(i, std::ios::beg);
         mainStream.get(digit);
-        if (i==0) ivStr=digit;
-        else ivStr+=digit;
+        if (i==0) ivLoc=digit;
+        else ivLoc+=digit;
     }
-    int ivPin = atoi(ivStr.c_str());
+    int ivPin = atoi(ivLoc.c_str());
     mainStream.seekg(ivPin, std::ios::beg);
     char finalIV[16];
     mainStream.read(finalIV, 16);
     close(mainStream);
-    return std::string(finalIV);
+    std::string ivStr = "";
+    for (unsigned int i = 0; i < 16; i++){
+        ivStr += finalIV[i];
+    }
+    return ivStr;
 }
 
 /**
@@ -205,22 +223,11 @@ std::string Encryptor::generateIV(int fileNum){
  * @param fileNum - the number of the key[num].bin file
  * @return the generated 16 char key
  */
-std::string Encryptor::generateKey(bool usingPIN, int PIN, int fileNum){
+std::string Encryptor::generateKey(int PIN, int fileNum){
     std::string num = Convert::intStr(fileNum);
     std::string keyFile = directory + "key" + num + ".bin";
     open(false, keyFile);
-    int ivPIN, arbPIN, indexPIN;
-    if (!usingPIN){
-        std::string ivStr;
-        for (int i = 10016; i < 10024; i+=2){
-            char digit;
-            mainStream.seekg(i, std::ios::beg);
-            mainStream.get(digit);
-            if (i==10016) ivPIN=digit;
-            else ivStr+=digit;
-        }
-        ivPIN = atoi(ivStr.c_str());
-    }
+    int arbPIN, indexPIN;
     std::string pinStr;
     for (int i = 10017; i < 10024; i+=2){
         char num[1];
@@ -230,10 +237,9 @@ std::string Encryptor::generateKey(bool usingPIN, int PIN, int fileNum){
         else pinStr+=num[0];
     }
     arbPIN = atoi(pinStr.c_str());
-    indexPIN = usingPIN ? Convert::bitwiseXOR(PIN, arbPIN) :
-        Convert::bitwiseXOR(ivPIN, arbPIN);
-    char draftKey[4][4];
+    indexPIN = Convert::bitwiseXOR(PIN, arbPIN);
     int place = 1000;
+    char draftKey[4][4];
     for (int i=0; i<4; i++){
         mainStream.seekg(indexPIN+Convert::digit(arbPIN, place), std::ios::beg);
         mainStream.read(draftKey[i], 4);
@@ -246,7 +252,11 @@ std::string Encryptor::generateKey(bool usingPIN, int PIN, int fileNum){
         }
     }
     close(mainStream);
-    return std::string(finalKey);
+    std::string keyStr = "";
+    for (int i=0; i < 16; i++){
+        keyStr += finalKey[i];
+    }
+    return keyStr;
 }
 
 /**
@@ -381,48 +391,30 @@ int Encryptor::findSize(std::fstream& file){
  * to encrypt/decrypt the haystack
  *
  */
-std::string Encryptor::retrieveKey(bool encrypting, bool usedPIN, std::string password){
+std::string Encryptor::retrieveKey(std::string password){
+    if (password.size() > 16) return password;
     openKey(false);
     char keyArray[16];
-    std::string keyStr;
-    char info;
-    bool PIN = true;
-    if (!encrypting){
-        keyStream.seekg(0, std::ios::beg);
-        keyStream.get(info);
-        PIN  = (info=='T');
-    }
-    else PIN = usedPIN;
-    if (PIN){
-        keyStream.seekg(0, std::ios::beg);
-        keyStream.read(keyArray, 16);
-    }
-    else{
-        for (unsigned int i=0; i < 16; i++){
-            keyStream.seekg(i, std::ios::beg);
-            char c;
-            keyStream.get(c);
-            if (i>=password.size()) keyArray[i] = c;
-            else keyArray[i] = password.at(i);
-        }
-    }
-    for (int i = 0; i < 16; i++){
-        if (i==0){
-            keyStr = keyArray[i];
-        }
-        else{
-            keyStr+= keyArray[i];
-        }
+    for (unsigned int i=0; i < 16; i++){
+        keyStream.seekg(i, std::ios::beg);
+        char c;
+        keyStream.get(c);
+        keyArray[i] = (i>=password.size()) ?
+        c : password.at(i);
     }
     close(keyStream);
+    std::string keyStr = "";
+    for (unsigned int i =0; i < 16; i ++){
+        keyStr += keyArray[i];
+    }
     return keyStr;
 }
 
 /**
  * Encrypt the 3 haystack files(key[num].bin);
  */
-Encryptor::Status Encryptor::encryptHaystack(bool usingPIN, std::string password){
-    std::string keyStr = retrieveKey(true, usingPIN, password);
+Encryptor::Status Encryptor::encryptHaystack(std::string password){
+    std::string keyStr = retrieveKey(password);
     std::string ivStr = "abcdefghijklmnop";
     for (unsigned int i = 0; i < keyStr.size(); i++){
         ivStr.at(keyStr.size()-1-i) = keyStr.at(i);
@@ -443,10 +435,11 @@ Encryptor::Status Encryptor::encryptHaystack(bool usingPIN, std::string password
 Encryptor::Status Encryptor::decryptHaystack(std::string password){
     if (!openKey(false)) return KEY_NOT_FOUND;
     char info;
-    keyStream.seekg(1, std::ios::beg);
+    keyStream.seekg(0, std::ios::beg);
     keyStream.get(info);
+    info = Convert::intChar((int)info % 3 + 1);
     std::string fileName = directory + "key" + info + ".bin";
-    std::string keyStr = retrieveKey(false, false, password);
+    std::string keyStr = retrieveKey(password);
     std::string ivStr;
     char ivChar[keyStr.size()];
     for (unsigned int i = 0; i < keyStr.size(); i++){
@@ -459,6 +452,7 @@ Encryptor::Status Encryptor::decryptHaystack(std::string password){
         else ivStr +=ivChar[i];
     }
     close(keyStream);
+
     return encryptFile(false, fileName, ivStr, keyStr);
 }
 
@@ -498,22 +492,20 @@ Encryptor::Status Encryptor::encryptFile(bool encrypt, std::string fileName, std
  * @param mainFile - the full file location
  * @return the enumerated result of the function
  */
-Encryptor::Status Encryptor::encrypt(bool usingPIN, std::string password, std::string mainFile){
+Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile){
     Status stat;
     if (isEncrypted(mainFile) && isEncrypted()) return ENCRYPTED;
     generateHayStack();
-    int fileNum = generateKeyFile(usingPIN);
+    int fileNum = generateKeyFile();
     if (fileNum==-1) return KEY_NOT_FOUND;
-    srand(time(0));
-    int pinVal = usingPIN ?
-        atoi(password.c_str()) :
-        (rand() % 10000);
-    if (pinVal < 0) pinVal *= -1;
-    configureHaystack(usingPIN, pinVal, fileNum);
+    int pinVal = generatePIN(password);
+    if (pinVal==-1) return KEY_NOT_FOUND;
+    configureHaystack(pinVal, fileNum);
     std::string ivStr = generateIV(fileNum);
-    std::string keyStr = generateKey(usingPIN, pinVal, fileNum);
+    std::string keyStr = generateKey(pinVal, fileNum);
     stat = encryptFile(true, mainFile, ivStr, keyStr);
-    if (stat==SUCCESS) stat = encryptHaystack(usingPIN, password);
+    if (stat==SUCCESS) stat = encryptHaystack(password);
+
     return stat;
 }
 
@@ -528,17 +520,13 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
     Status stats = decryptHaystack(password);
     if (stats!=SUCCESS) return stats;
     openKey(false);
-    char info[2];
+    char info;
     keyStream.seekg(0, std::ios::beg);
-    keyStream.read(info, 2);
+    keyStream.get(info);
     close(keyStream);
-    bool usedPin = (info[0]=='T');
-    int pin = 1111;
-    if (usedPin){
-        pin = atoi(password.c_str());
-    }
-    int fileNum = Convert::charInt(info[1]);
-    std::string keyStr = generateKey(usedPin, pin, fileNum);
+    int fileNum = (int)info % 3 + 1;
+    int PIN = generatePIN(password);
+    std::string keyStr = generateKey(PIN, fileNum);
     std::string ivStr = generateIV(fileNum);
     stats = encryptFile(false, mainFile, ivStr, keyStr);
     if (stats!=SUCCESS){
@@ -548,7 +536,7 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         keyStream.seekg(0, std::ios::beg);
         keyStream.read(info, 2);
         close(keyStream);
-        keyStr = retrieveKey(true, usedPin, password);
+        keyStr = retrieveKey(password);
         char ivChar[keyStr.size()];
         for (unsigned int i = 0; i < keyStr.size(); i++){
             ivChar[keyStr.size()-1-i] = keyStr.at(i);

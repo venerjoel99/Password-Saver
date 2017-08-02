@@ -487,21 +487,13 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
         return;
     }
     Encryptor obj;
-    if (obj.isEncrypted() && file.getFileName()==dir + mainFile){
+    if (obj.isEncrypted(dir + mainFile) && obj.isEncrypted() && file.getFileName()==dir + mainFile){
         showStatusDialog(Encryptor::ENCRYPTED, true);
         return;
     }
-    wxArrayString arr;
-    arr.Add(wxT("4-DIGIT PIN"));
-    arr.Add(wxT("Password"));
-    wxSingleChoiceDialog choice(NULL, wxT("Choose Encryption method:"), wxT("Encryption Method"), arr, NULL, wxOK /*| wxCANCEL*/);
-    int confirm = choice.ShowModal();
-    if (confirm==wxID_CANCEL) return;
-    bool usingPIN = (choice.GetSelection()==0);
-    wxString prompt = usingPIN ? wxT("4-DIGIT PIN") : wxT("password");
-    wxPasswordEntryDialog dlg(NULL, wxT("Enter a new ") + prompt, wxT("New ") + prompt, wxEmptyString,
+    wxPasswordEntryDialog dlg(NULL, wxT("Enter a new password"), wxT("New password"), wxEmptyString,
                                  wxOK | wxCANCEL);
-    confirm = dlg.ShowModal();
+    int confirm = dlg.ShowModal();
     if (confirm==wxCANCEL) return;
     std::string info = std::string(dlg.GetValue().mb_str());
     wxMessageDialog msg(NULL, wxT("Do you remember your password?"), wxT("Confirm"), wxYES_NO |
@@ -517,7 +509,7 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
         showStatusDialog(Encryptor::WRONG_PASSWORD, true);
         return;
     }
-    Encryptor::Status stats = file.encrypt(usingPIN, info);
+    Encryptor::Status stats = file.encrypt(info);
     showStatusDialog(stats, true);
 }
 

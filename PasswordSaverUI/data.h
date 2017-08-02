@@ -66,7 +66,7 @@ public:
     };
     Data::Success changeInfo(std::string ,std::string , Data::Change);
     Data::Success changeInfo(std::string, std::string, std::string);
-    Encryptor::Status encrypt(bool, std::string);
+    Encryptor::Status encrypt(std::string);
     Encryptor::Status decrypt(std::string);
     std::string getFileName();
     void encrypt(bool);

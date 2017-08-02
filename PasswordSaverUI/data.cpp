@@ -404,7 +404,7 @@ Data::Success Data::changeInfo(std::string website, std::string newUsername, std
  * @param passcode - the PIN or password string
  * @return the Encryptor class generated enumeration result
  */
-Encryptor::Status Data::encrypt(bool usePin, std::string passcode){
+Encryptor::Status Data::encrypt(std::string passcode){
     unsigned int periodPos = fileName.find('.');
     std::string keyFolder = periodPos!=std::string::npos ?
         fileDir + fileName.substr(0, periodPos) + "/" :
@@ -412,7 +412,7 @@ Encryptor::Status Data::encrypt(bool usePin, std::string passcode){
     mkdir(keyFolder.c_str());
     Encryptor aes(keyFolder);
     close();
-    return aes.encrypt(usePin, passcode, fileDir + fileName);
+    return aes.encrypt(passcode, fileDir + fileName);
 }
 
 /**
