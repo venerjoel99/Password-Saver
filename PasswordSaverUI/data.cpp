@@ -302,6 +302,21 @@ Data::Success Data::writeIntoFile(Info info){
 }
 
 /**
+ * Write a string into the file stream
+ * @param str - the file string
+ * @param rewrite - whether to clear the previous data
+ * @return the resulting status of the function
+ */
+Data::Success Data::writeIntoFile(std::string str, bool rewrite){
+    bool opened = rewrite ? open(REWRITE) : open(REGULAR);
+    if (opened){
+        theFile << str;
+        return SUCCESS;
+    }
+    return FILE_NOT_FOUND;
+}
+
+/**
  * Read the file content into a std::string object
  * @param datastd::string - the std::string object to insert file content into
  * @return the resulting status of the function

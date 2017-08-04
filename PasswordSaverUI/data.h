@@ -31,16 +31,19 @@ private:
     std::string keyword;
     std::string keyFolder;
     std::fstream theFile;
+    int searchEngine(std::string);                     //Searches for the keyword
+    Info read(int);
     enum OpenMode{
         REGULAR,
         REWRITE,
         ENCRYPTION,
         READ_ONLY,
         CLOSED
-    }currentMode=CLOSED;
-    int searchEngine(std::string);                     //Searches for the keyword
-    Info read(int);
+    } currentMode = CLOSED;
 public:
+    Data();
+    Data(std::string);
+    Data(std::string, std::string);
     bool open(OpenMode);
     void close();
     enum Success{
@@ -48,15 +51,13 @@ public:
         FILE_NOT_FOUND,
         NO_RESULTS
     };
-    Data();
-    Data(std::string);
-    Data(std::string, std::string);
     virtual ~Data();
     bool isOpen();
-    bool is_encrypted();                    //Checks if file is encrypted
-    int findSize();            //Find size of a file in the stream
+    bool is_encrypted();                             //Checks if file is encrypted
+    int findSize();                                  //Find size of a file in the stream
     Info findSearch(std::string);
-    Data::Success writeIntoFile(Info);   //writes credential into file
+    Data::Success writeIntoFile(Info);               //writes credential into file
+    Data::Success writeIntoFile(std::string, bool);
     Data::Success readFromFile(std::string&);        //read content from the file
     Data::Success changeFile(std::string, std::string);
     Data::Success changeFile(std::string, bool);

@@ -549,6 +549,13 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
         showStatusDialog(Encryptor::WRONG_PASSWORD, true);
         return;
     }
+    Data dummy(keyDir, "key0.bin");
+    std::string hashStr = "";
+    for (int i = 0; i < testStr.size(); i++){
+        char c = testStr.at(i);
+        hashStr += (c=='\n') ? c : '-';
+    }
+    dummy.writeIntoFile(hashStr, true);
     Encryptor::Status stats = encrypt(info);
     showStatusDialog(stats, true);
 }
