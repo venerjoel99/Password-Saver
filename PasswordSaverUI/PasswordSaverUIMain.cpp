@@ -20,6 +20,8 @@
 #include "data.h"
 #include "Encryptor.h"
 
+#include <iostream>
+
 //(*InternalHeaders(PasswordSaverUIFrame)
 #include <wx/artprov.h>
 #include <wx/bitmap.h>
@@ -264,32 +266,15 @@ void PasswordSaverUIFrame::OnAbout(wxCommandEvent& event)
  */
 void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
 {
-    std::fstream temp;
-    std::string prevDir;
-    std::string settings = "prevdir.bin";
-    temp.open(settings.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
-    temp >> prevDir;
-    temp.close();
-    wxString fillIn(prevDir.c_str(), wxConvUTF8);
-    wxTextEntryDialog dlg(NULL, wxT("Enter file directory (Required)"), wxT("File Directory"), fillIn, wxOK | wxCANCEL);
+    wxFileDialog dlg(NULL, wxT("Select a file"));
     int confirm = dlg.ShowModal();
     if (confirm==wxID_CANCEL) return;
-    std::string str = std::string(dlg.GetValue().mb_str());
-    dir = str;
-    int dirSize = dir.size();
-    if (dirSize>0 && dir.at(dirSize-1)!='/'){
-        dir += "/";
-    }
-    realDir = dir;
-    temp.open(settings.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
-    temp << dir;
-    temp.close();
-    wxTextEntryDialog dlg2(NULL, wxT("Enter file name (Required)"), wxT("File name"), wxT("passwords.bin"), wxOK | wxCANCEL);
-    confirm = dlg2.ShowModal();
-    if (confirm==wxID_CANCEL) return;
-    str = std::string(dlg2.GetValue().mb_str());
+    std::string str = std::string(dlg.GetDirectory().mb_str());
+    dir = str + "\\";
+    str = std::string(dlg.GetFilename().mb_str());
     mainFile = str;
     int mainFileSize = mainFile.size();
+    int dirSize = dir.size();
     if (mainFileSize==0){
         showStatusDialog(Data::FILE_NOT_FOUND);
         return;
@@ -304,12 +289,13 @@ void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
     else{
         mainFile +=".bin";
     }
+    realDir = dir;
     realFile = mainFile;
     if (mainFileSize > 0 && dirSize > 0){
         unsigned int periodPos = mainFile.find('.');
         keyDir = (periodPos!=std::string::npos) ?
-        dir + mainFile.substr(0, periodPos) + "/" :
-        dir + mainFile + "/";
+        dir + mainFile.substr(0, periodPos) + "\\" :
+        dir + mainFile + "\\";
     }
     else{
         keyDir = "";
@@ -599,7 +585,12 @@ void PasswordSaverUIFrame::OnDecryptButtonClick(wxCommandEvent& event)
     wxPasswordEntryDialog dlg(NULL, wxT("Enter your password"), wxT("Authenticate"), wxEmptyString,
                                  wxOK | wxCANCEL);
     int confirm = dlg.ShowModal();
-    if (confirm==wxID_CANCEL) return;
+    if (confirm==wxID_CANCEL) {
+        dir = keyDir;
+        mainFile = "key0.bin";
+        file.changeFile(dir, mainFile);
+        return;
+    }
     std::string info = std::string(dlg.GetValue().mb_str());
     Encryptor::Status stats = decrypt(info);
     if (stats==Encryptor::WRONG_PASSWORD){
