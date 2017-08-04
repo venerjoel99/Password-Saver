@@ -686,6 +686,9 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         char info;
         keyStream.seekg(0, std::ios::beg);
         keyStream.get(info);
+        int indicatorIndex = ((int)info) % keyLength;
+        keyStream.seekg(indicatorIndex, std::ios::beg);
+        keyStream.get(info);
         close(keyStream);
         int fileNum = (int)info % 3 + 1;
         int PIN = generatePIN(password);
