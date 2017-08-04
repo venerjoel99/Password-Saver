@@ -12,8 +12,6 @@
 
 #include "Convert.h"
 
-#include <iostream>
-
 /**
  * Default constructor
  */

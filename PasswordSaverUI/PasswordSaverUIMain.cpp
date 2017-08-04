@@ -536,7 +536,7 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
         showStatusDialog(test);
         return;
     }
-    if (isEncrypted() && realDir + realFile == dir + mainFile){
+    if (isEncrypted()){
         showStatusDialog(Encryptor::ENCRYPTED, true);
         return;
     }
