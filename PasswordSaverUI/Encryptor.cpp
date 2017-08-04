@@ -200,8 +200,18 @@ int Encryptor::generateKeyFile(){
     }
     keyStream.seekp(0, std::ios::beg);
     keyStream.write(primaryKey, keyLength);
+    int randIndex = ((int)primaryKey[0]) % keyLength;
+    try{
+        openKey(false);
+    }
+    catch(Encryptor::Status s){
+        throw s;
+    }
+    char c;
+    keyStream.seekg(randIndex, std::ios::beg);
+    keyStream.get(c);
     close(keyStream);
-    return ((int)primaryKey[0]) % 3 + 1;
+    return ((int)c) % 3 + 1;
 }
 
 /**
@@ -574,7 +584,10 @@ Encryptor::Status Encryptor::decryptHaystack(std::string password){
     char info;
     keyStream.seekg(0, std::ios::beg);
     keyStream.get(info);
-    info = Convert::intChar((int)info % 3 + 1);
+    int indicatorIndex = ((int)info) % keyLength;
+    keyStream.seekg(indicatorIndex, std::ios::beg);
+    keyStream.get(info);
+    info = Convert::intChar(((int)info) % 3 + 1);
     std::string fileName = directory + "key" + info + ".bin";
     std::string keyStr = retrieveKey(password);
     std::string ivStr = "";
