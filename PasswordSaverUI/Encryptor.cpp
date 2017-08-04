@@ -1,14 +1,15 @@
 #include "Encryptor.h"
+
 #include <fstream>
 #include <string>
 #include <ctime>
 #include <cstdlib>
 #include <cmath>
-#include <iostream>
 
 #include "modes.h"
 #include "aes.h"
 #include "filters.h"
+
 #include "Convert.h"
 
 /**
@@ -49,7 +50,6 @@ void Encryptor::openKey(bool write){
         keyStream.open(keyLocation.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
     }
     if (!keyStream.is_open()){
-        std::cout << "key is not found\n";
         throw Encryptor::KEY_NOT_FOUND;
     }
 }
@@ -69,7 +69,6 @@ void Encryptor::open(bool write, int fileNum){
         mainStream.open(fileName.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
     }
     if (!mainStream.is_open()){
-        std::cout << "File not found\n";
         throw Encryptor::FILE_NOT_FOUND;
     }
 }
@@ -83,7 +82,6 @@ void Encryptor::open(int fileNum){
     if (mainStream.is_open()) mainStream.close();
     mainStream.open(fileName.c_str(), std::ios::out|std::ios::binary|std::ios::in);
     if (!mainStream.is_open()){
-        std::cout << "File not found\n";
         throw Encryptor::FILE_NOT_FOUND;
     }
 }
@@ -102,7 +100,6 @@ void Encryptor::open(bool write, std::string fileName){
         mainStream.open(fileName.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
     }
     if (!mainStream.is_open()){
-        std::cout << "File not found\n";
         throw Encryptor::FILE_NOT_FOUND;
     }
 }
@@ -115,7 +112,6 @@ void Encryptor::open(std::string fileName){
     if (mainStream.is_open()) mainStream.close();
     mainStream.open(fileName.c_str(), std::ios::out|std::ios::binary|std::ios::in);
     if (!mainStream.is_open()){
-        std::cout << "File not found\n";
         throw Encryptor::FILE_NOT_FOUND;
     }
 }
@@ -138,7 +134,6 @@ int Encryptor::generatePIN(std::string password){
         openKey(false);
     }
     catch(Encryptor::Status s){
-        std::cout << "here1\n";
         throw s;
     }
     char begKeyChar, endKeyChar, begChar, endChar;
@@ -167,7 +162,6 @@ void Encryptor::generateHayStack(){
             open(true, i);
         }
         catch(Encryptor::Status s){
-            std::cout << "here2\n";
             throw s;
         }
         int fileSize = haystackSize + blockSize;
@@ -202,7 +196,6 @@ int Encryptor::generateKeyFile(){
         openKey(true);
     }
     catch(Encryptor::Status s){
-        std::cout << "here3\n";
         throw s;
     }
     keyStream.seekp(0, std::ios::beg);
@@ -224,7 +217,6 @@ std::string Encryptor::fileStr(std::string fileName){
         open(false, fileName);
     }
     catch(Encryptor::Status s){
-        std::cout << "here4\n";
         throw s;
     }
     int fileSize = findSize(mainStream);
@@ -285,7 +277,6 @@ std::string Encryptor::generateIV(int fileNum){
         open(false, fileNum);
     }
     catch(Encryptor::Status s){
-        std::cout << "here5\n";
         throw s;
     }
     int fileSize = haystackSize + blockSize;
@@ -302,7 +293,7 @@ std::string Encryptor::generateIV(int fileNum){
     mainStream.read(finalIV, blockSize);
     close(mainStream);
     std::string ivStr = "";
-    for (unsigned int i = 0; i < blockSize; i++){
+    for (int i = 0; i < blockSize; i++){
         ivStr += finalIV[i];
     }
     return ivStr;
@@ -319,7 +310,6 @@ std::string Encryptor::generateKey(int PIN, int fileNum){
         open(false, fileNum);
     }
     catch(Encryptor::Status s){
-        std::cout << "here6\n";
         throw s;
     }
     int arbPIN, indexPIN;
@@ -369,12 +359,10 @@ bool Encryptor::isEncrypted(){
     bool encrypted[3];
     for (int i = 0; i < 3; i++){
         std::string fileName = directory + "key" + Convert::intStr(i+1) + ".bin";
-        std::cout << fileName << std::endl;
         std::string dataFeed;
         try{
             dataFeed = fileStr(fileName);
         }catch(Encryptor::Status s){
-            std::cout << "here7\n";
             return false;
         }
         int fileSize = dataFeed.size();
@@ -407,7 +395,6 @@ bool Encryptor::isEncrypted(std::string fileName){
         open(false, fileName);
     }
     catch(Encryptor::Status s){
-        std::cout << "here8\n";
         return false;
     }
     std::string dataFeed = fileStr(fileName);
@@ -512,11 +499,10 @@ std::string Encryptor::retrieveKey(std::string password){
         openKey(false);
     }
     catch(Encryptor::Status s){
-        std::cout << "here9\n";
         throw s;
     }
     char keyArray[keyLength];
-    for (unsigned int i=0; i < keyLength; i++){
+    for (int i=0; i < keyLength; i++){
         keyStream.seekg(i, std::ios::beg);
         char c;
         keyStream.get(c);
@@ -531,7 +517,7 @@ std::string Encryptor::retrieveKey(std::string password){
     }
     close(keyStream);
     std::string keyStr = "";
-    for (unsigned int i =0; i < keyLength; i ++){
+    for (int i =0; i < keyLength; i ++){
         keyStr += keyArray[i];
     }
     return keyStr;
@@ -547,7 +533,6 @@ Encryptor::Status Encryptor::encryptHaystack(std::string password){
     try{
         keyStr = retrieveKey(password);
     }catch(Encryptor::Status s){
-        std::cout << "here10\n";
         return s;
     }
     std::string ivStr = "";
@@ -555,7 +540,6 @@ Encryptor::Status Encryptor::encryptHaystack(std::string password){
         openKey(false);
     }
     catch(Encryptor::Status s){
-        std::cout << "here11\n";
         return s;
     }
     for (int i = blockSize - 1; i >= 0; i--){
@@ -585,7 +569,6 @@ Encryptor::Status Encryptor::decryptHaystack(std::string password){
         openKey(false);
     }
     catch(Encryptor::Status s){
-        std::cout << "here12\n";
         return s;
     }
     char info;
@@ -599,7 +582,6 @@ Encryptor::Status Encryptor::decryptHaystack(std::string password){
         openKey(false);
     }
     catch(Encryptor::Status s){
-        std::cout << "here13\n";
         return s;
     }
     for (int i = blockSize - 1; i >= 0; i--){
@@ -627,7 +609,6 @@ Encryptor::Status Encryptor::encryptFile(bool encrypt, std::string fileName, std
         result = encryptText(encrypt, fileStr(fileName), ivStr, keyStr);
     }
     catch(...){
-        std::cout << "here14\n";
         if (!encrypt) return WRONG_PASSWORD;
         else return FAIL;
     }
@@ -639,7 +620,6 @@ Encryptor::Status Encryptor::encryptFile(bool encrypt, std::string fileName, std
         open(true, fileName);
     }
     catch(Encryptor::Status s){
-        std::cout << "here15\n";
         return s;
     }
     mainStream.write(fileArray, result.size());
@@ -670,7 +650,6 @@ Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile)
         stat = encryptFile(true, mainFile, ivStr, keyStr);
         if (stat==SUCCESS) stat = encryptHaystack(password);
     }catch(Encryptor::Status s){
-        std::cout << "here16\n";
         return s;
     }
     return stat;
@@ -718,7 +697,6 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         }
          return stats;
     }catch(Encryptor::Status s){
-        std::cout << "here17\n";
         return s;
     }
     return stats;

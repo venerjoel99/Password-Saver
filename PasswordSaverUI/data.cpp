@@ -1,8 +1,10 @@
 #include "data.h"
-#include "Encryptor.h"
+
 #include <fstream>
 #include <string>
 #include <iostream>
+
+#include "Encryptor.h"
 
 ///Constructor for Info class
 Info::Info(std::string website, std::string username, std::string password){
@@ -108,7 +110,6 @@ Data::Data(){
  */
 Data::~Data(){
     if (theFile.is_open()) theFile.close();
-    std::cout << "Destructor\n";
 }
 
 /**

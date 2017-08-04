@@ -8,16 +8,17 @@
  **************************************************************/
 
 #include "PasswordSaverUIMain.h"
+
 #include "wx_pch.h"
 #include <wx/msgdlg.h>
 #include <wx/textdlg.h>
 #include <wx/msgdlg.h>
+
 #include <fstream>
 #include <string>
+
 #include "data.h"
 #include "Encryptor.h"
-
-#include <iostream>
 
 //(*InternalHeaders(PasswordSaverUIFrame)
 #include <wx/artprov.h>
@@ -294,14 +295,11 @@ void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
         return;
     }
     int periodPos = mainFile.find('.');
-    if (periodPos >= 0 && periodPos<=mainFileSize-4){
-        std::string ext = mainFile.substr(periodPos, 4);
+    if (periodPos >= 0 && periodPos != std::string::npos){
+        std::string ext = mainFile.substr(periodPos, mainFileSize - 1);
         if (ext!=".bin"){
             mainFile = mainFile.substr(0, periodPos) + ".bin";
         }
-    }
-    else if (periodPos <= mainFileSize - 1){
-        mainFile = mainFile.substr(0, periodPos) + ".bin";
     }
     else{
         mainFile +=".bin";
@@ -382,7 +380,6 @@ void PasswordSaverUIFrame::OnNewButtonClick(wxCommandEvent& event)
     std::string testStr;
     Data::Success test = file.readFromFile(testStr);
     if (test!=Data::SUCCESS){
-        std::cout << file.getFileName() << std::endl;
         showStatusDialog(test);
         return;
     }
@@ -541,7 +538,6 @@ void PasswordSaverUIFrame::encrypt(bool state){
 bool PasswordSaverUIFrame::isEncrypted(){
     file.close();
     Encryptor obj;
-    std::cout << "Called\n";
     return obj.isEncrypted(dir + mainFile);
 }
 
