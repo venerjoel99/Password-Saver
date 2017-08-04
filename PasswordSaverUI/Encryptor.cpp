@@ -440,7 +440,7 @@ bool Encryptor::isEncrypted(std::string fileName){
  * @return the resulting string from encryption/decryption
  */
 std::string Encryptor::encryptText(bool encrypt, std::string text, std::string ivStr, std::string keyStr){
-    std::string plaintext, ciphertext;
+    std::string plaintext, ciphertext, result;
     char keyArray[keyStr.size()], ivArray[ivStr.size()];
     for (unsigned int i = 0; i < keyStr.size(); i++){
         keyArray[i] = keyStr.at(i);
@@ -460,7 +460,7 @@ std::string Encryptor::encryptText(bool encrypt, std::string text, std::string i
         CryptoPP::StreamTransformationFilter stfEncryptor(cbcEncryption, new CryptoPP::StringSink( ciphertext ) );
         stfEncryptor.Put( reinterpret_cast<const unsigned char*>( plaintext.c_str() ), plaintext.length() + 1 );
         stfEncryptor.MessageEnd();
-        return ciphertext;
+        result = ciphertext;
     }
     else{
         ciphertext = text;
@@ -469,21 +469,9 @@ std::string Encryptor::encryptText(bool encrypt, std::string text, std::string i
         CryptoPP::StreamTransformationFilter stfDecryptor(cbcDecryption, new CryptoPP::StringSink( plaintext ) );
         stfDecryptor.Put( reinterpret_cast<const unsigned char*>( ciphertext.c_str() ), ciphertext.size() );
         stfDecryptor.MessageEnd();
-        return plaintext;
+        result = plaintext;
     }
     ///End of the cited code
-    std::string result = "";
-    if (encrypt){
-        result = text;
-    }
-    else{
-        for (unsigned int i = 0; i < text.size(); i++){
-            char c = text.at(i);
-            if ((int)c!=0){
-                result += text.at(i);
-            }
-        }
-    }
     return result;
 }
 
