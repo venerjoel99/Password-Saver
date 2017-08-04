@@ -60,6 +60,7 @@ class PasswordSaverUIFrame: public wxFrame
         void OnEditButtonClick(wxCommandEvent& event);
         void OnClearButtonClick(wxCommandEvent& event);
         void OnClearButtonClick1(wxCommandEvent& event);
+        void OnDlgButtonClick(wxCommandEvent& event);
         //*)
 
         //(*Identifiers(PasswordSaverUIFrame)
@@ -72,6 +73,7 @@ class PasswordSaverUIFrame: public wxFrame
         static const long ID_BUTTON4;
         static const long ID_BUTTON5;
         static const long ID_BUTTON6;
+        static const long ID_BUTTON8;
         static const long ID_LISTBOX1;
         static const long ID_PANEL1;
         static const long idMenuEncrypt;
@@ -83,6 +85,7 @@ class PasswordSaverUIFrame: public wxFrame
 
         //(*Declarations(PasswordSaverUIFrame)
         wxPanel* mainPanel;
+        wxButton* Button1;
         wxMenuItem* MenuItem4;
         wxListBox* FileBox;
         wxStaticText* FileLabel;

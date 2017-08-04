@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<wxsmith>
+	<object class="wxDialog" name="MultiTextDialog">
+		<size>680,478</size>
+		<pos_arg>1</pos_arg>
+		<size_arg>1</size_arg>
+		<object class="wxButton" name="ID_BUTTON1" variable="Button1" member="yes">
+			<label>Label</label>
+			<pos>112,136</pos>
+		</object>
+		<object class="wxButton" name="ID_BUTTON2" variable="Button2" member="yes">
+			<label>Label</label>
+			<pos>240,136</pos>
+		</object>
+		<object class="wxTextCtrl" name="ID_TEXTCTRL1" variable="TextCtrl1" member="yes">
+			<value>Text</value>
+			<pos>112,56</pos>
+			<size>352,33</size>
+		</object>
+	</object>
+</wxsmith>

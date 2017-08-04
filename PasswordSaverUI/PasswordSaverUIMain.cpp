@@ -19,6 +19,8 @@
 
 #include "data.h"
 #include "Encryptor.h"
+#include "MultiTextDialog.h"
+#include <iostream>
 
 //(*InternalHeaders(PasswordSaverUIFrame)
 #include <wx/artprov.h>
@@ -65,6 +67,7 @@ const long PasswordSaverUIFrame::ID_BUTTON3 = wxNewId();
 const long PasswordSaverUIFrame::ID_BUTTON4 = wxNewId();
 const long PasswordSaverUIFrame::ID_BUTTON5 = wxNewId();
 const long PasswordSaverUIFrame::ID_BUTTON6 = wxNewId();
+const long PasswordSaverUIFrame::ID_BUTTON8 = wxNewId();
 const long PasswordSaverUIFrame::ID_LISTBOX1 = wxNewId();
 const long PasswordSaverUIFrame::ID_PANEL1 = wxNewId();
 const long PasswordSaverUIFrame::idMenuEncrypt = wxNewId();
@@ -128,6 +131,8 @@ PasswordSaverUIFrame::PasswordSaverUIFrame(wxWindow* parent,wxWindowID id)
     ButtonSizer->Add(DeleteButton, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
     ClearButton = new wxButton(mainPanel, ID_BUTTON6, _("Clear"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON6"));
     ButtonSizer->Add(ClearButton, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
+    Button1 = new wxButton(mainPanel, ID_BUTTON8, _("Label"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON8"));
+    ButtonSizer->Add(Button1, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
     mainGrid->Add(ButtonSizer, 1, wxALL|wxALIGN_TOP|wxALIGN_CENTER_HORIZONTAL, 5);
     FileBox = new wxListBox(mainPanel, ID_LISTBOX1, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_LISTBOX1"));
     mainGrid->Add(FileBox, 1, wxALL|wxEXPAND, 5);
@@ -162,6 +167,7 @@ PasswordSaverUIFrame::PasswordSaverUIFrame(wxWindow* parent,wxWindowID id)
     Connect(ID_BUTTON4,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnEditButtonClick);
     Connect(ID_BUTTON5,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnDeleteButtonClick);
     Connect(ID_BUTTON6,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnClearButtonClick1);
+    Connect(ID_BUTTON8,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnDlgButtonClick);
     Connect(idMenuEncrypt,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnEncryptButtonClick);
     Connect(idMenuDecrypt,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnDecryptButtonClick);
     Connect(idMenuQuit,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnQuit);
@@ -693,4 +699,12 @@ void PasswordSaverUIFrame::OnEditButtonClick(wxCommandEvent& event)
 void PasswordSaverUIFrame::OnClearButtonClick1(wxCommandEvent& event)
 {
     FileBox->Clear();
+}
+
+void PasswordSaverUIFrame::OnDlgButtonClick(wxCommandEvent& event)
+{
+    MultiTextDialog dlg(NULL, wxID_ANY, wxDefaultPosition, wxDefaultSize);
+    int confirm = dlg.ShowModal();
+    if (confirm==wxID_OK) std::cout << "pressed ok\n";
+    if (confirm==wxID_CANCEL) std::cout << "pressed cancel\n";
 }
