@@ -16,21 +16,31 @@
  */
 Encryptor::Encryptor(){
     directory = "";
+    keyDirectory = "";
 }
 
 /**
  * Constructor with key directory passed
  */
-Encryptor::Encryptor(std::string keyDir){
-    directory = keyDir;
+Encryptor::Encryptor(std::string dir){
+    directory = dir;
+    keyDirectory = dir;
 };
+
+/**
+ * Constructor with two different directories passed
+ */
+Encryptor::Encryptor(std::string hayDir, std::string keyDir){
+    directory = hayDir;
+    keyDirectory = keyDir;
+}
 
 /**
  * Opens key.bin
  * @param write - true if open for write-only, false if open for reading
  */
 void Encryptor::openKey(bool write){
-    std::string keyLocation = directory + "key.bin";
+    std::string keyLocation = keyDirectory + "key.bin";
     if (keyStream.is_open()) keyStream.close();
     if (write){
         keyStream.open(keyLocation.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
@@ -38,7 +48,10 @@ void Encryptor::openKey(bool write){
     else{
         keyStream.open(keyLocation.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
     }
-    if (!keyStream.is_open()) throw Encryptor::KEY_NOT_FOUND;
+    if (!keyStream.is_open()){
+        std::cout << "key is not found\n";
+        throw Encryptor::KEY_NOT_FOUND;
+    }
 }
 
 /**
@@ -55,7 +68,10 @@ void Encryptor::open(bool write, int fileNum){
     else{
         mainStream.open(fileName.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
     }
-    if (!mainStream.is_open()) throw Encryptor::FILE_NOT_FOUND;
+    if (!mainStream.is_open()){
+        std::cout << "File not found\n";
+        throw Encryptor::FILE_NOT_FOUND;
+    }
 }
 
 /**
@@ -66,7 +82,10 @@ void Encryptor::open(int fileNum){
     std::string fileName = directory + "key" + Convert::intStr(fileNum) + ".bin";
     if (mainStream.is_open()) mainStream.close();
     mainStream.open(fileName.c_str(), std::ios::out|std::ios::binary|std::ios::in);
-    if (!mainStream.is_open()) throw Encryptor::FILE_NOT_FOUND;
+    if (!mainStream.is_open()){
+        std::cout << "File not found\n";
+        throw Encryptor::FILE_NOT_FOUND;
+    }
 }
 
 /**
@@ -82,7 +101,10 @@ void Encryptor::open(bool write, std::string fileName){
     else{
         mainStream.open(fileName.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
     }
-    if (!mainStream.is_open()) throw Encryptor::FILE_NOT_FOUND;
+    if (!mainStream.is_open()){
+        std::cout << "File not found\n";
+        throw Encryptor::FILE_NOT_FOUND;
+    }
 }
 
 /**
@@ -92,7 +114,10 @@ void Encryptor::open(bool write, std::string fileName){
 void Encryptor::open(std::string fileName){
     if (mainStream.is_open()) mainStream.close();
     mainStream.open(fileName.c_str(), std::ios::out|std::ios::binary|std::ios::in);
-    if (!mainStream.is_open()) throw Encryptor::FILE_NOT_FOUND;
+    if (!mainStream.is_open()){
+        std::cout << "File not found\n";
+        throw Encryptor::FILE_NOT_FOUND;
+    }
 }
 
 /**
@@ -344,9 +369,10 @@ bool Encryptor::isEncrypted(){
     bool encrypted[3];
     for (int i = 0; i < 3; i++){
         std::string fileName = directory + "key" + Convert::intStr(i+1) + ".bin";
+        std::cout << fileName << std::endl;
         std::string dataFeed;
         try{
-            fileStr(fileName);
+            dataFeed = fileStr(fileName);
         }catch(Encryptor::Status s){
             std::cout << "here7\n";
             return false;
@@ -596,10 +622,9 @@ Encryptor::Status Encryptor::decryptHaystack(std::string password){
  * @return the final enumerated result of the process
  */
 Encryptor::Status Encryptor::encryptFile(bool encrypt, std::string fileName, std::string ivStr, std::string keyStr){
-    std::string fileString = fileStr(fileName);
     std::string result;
     try{
-        result = encryptText(encrypt, fileString, ivStr, keyStr);
+        result = encryptText(encrypt, fileStr(fileName), ivStr, keyStr);
     }
     catch(...){
         std::cout << "here14\n";
@@ -676,8 +701,6 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         std::string ivStr = generateIV(fileNum);
         stats = encryptFile(false, mainFile, ivStr, keyStr);
         if (stats!=SUCCESS){
-            std::cout << "SUCC\n";
-            std::string hayNum = directory + "key" + Convert::intStr(fileNum) + ".bin";
             keyStr = retrieveKey(password);
             char ivChar[keyStr.size()];
             for (unsigned int i = 0; i < keyStr.size(); i++){
@@ -689,6 +712,7 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
                 }
                 else ivStr +=ivChar[i];
             }
+            std::string hayNum = directory + "key" + Convert::intStr(fileNum) + ".bin";
             encryptFile(true, hayNum, ivStr, keyStr);
             return stats;
         }

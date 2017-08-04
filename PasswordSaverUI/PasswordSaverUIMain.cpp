@@ -17,6 +17,8 @@
 #include "data.h"
 #include "Encryptor.h"
 
+#include <iostream>
+
 //(*InternalHeaders(PasswordSaverUIFrame)
 #include <wx/artprov.h>
 #include <wx/bitmap.h>
@@ -262,9 +264,9 @@ void PasswordSaverUIFrame::OnAbout(wxCommandEvent& event)
 void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
 {
     std::fstream temp;
+    std::string prevDir;
     std::string settings = "prevdir.bin";
     temp.open(settings.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
-    std::string prevDir;
     temp >> prevDir;
     temp.close();
     wxString fillIn(prevDir.c_str(), wxConvUTF8);
@@ -277,8 +279,10 @@ void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
     if (dirSize>0 && dir.at(dirSize-1)!='/'){
         dir += "/";
     }
+    realDir = dir;
     temp.open(settings.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
     temp << dir;
+    temp.close();
     wxTextEntryDialog dlg2(NULL, wxT("Enter file name (Required)"), wxT("File name"), wxT("passwords.bin"), wxOK | wxCANCEL);
     confirm = dlg2.ShowModal();
     if (confirm==wxID_CANCEL) return;
@@ -296,16 +300,29 @@ void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
             mainFile = mainFile.substr(0, periodPos) + ".bin";
         }
     }
+    else if (periodPos <= mainFileSize - 1){
+        mainFile = mainFile.substr(0, periodPos) + ".bin";
+    }
     else{
         mainFile +=".bin";
     }
+    realFile = mainFile;
+    if (mainFileSize > 0 && dirSize > 0){
+        unsigned int periodPos = mainFile.find('.');
+        keyDir = (periodPos!=std::string::npos) ?
+        dir + mainFile.substr(0, periodPos) + "/" :
+        dir + mainFile + "/";
+    }
+    else{
+        keyDir = "";
+    }
     file.changeFile(dir, mainFile);
     ChangeButton->SetLabel(wxT("Change file"));
-    std::string fileName = dir + mainFile;
+    std::string fileName = realDir + realFile;
     wxString wxFile(fileName.c_str(), wxConvUTF8);
     FileLabel->SetLabel(wxT("File: ") + wxFile);
     if (webLink->IsShown()) webLink->Hide();
-    if(file.isEncrypted()){
+    if(isEncrypted()){
         FileBox->Clear();
         showStatusDialog(Encryptor::ENCRYPTED, true);
     }
@@ -343,7 +360,7 @@ void PasswordSaverUIFrame::addToListBox(std::string info){
  * Refreshes the content of the giant list box
  */
 void PasswordSaverUIFrame::refresh(){
-    if (file.isEncrypted()){
+    if (isEncrypted()){
         wxMessageDialog error(NULL, wxT("Error: File is encrypted"), wxT("Error"), wxOK | wxICON_ERROR);
         error.ShowModal();
         return;
@@ -365,10 +382,11 @@ void PasswordSaverUIFrame::OnNewButtonClick(wxCommandEvent& event)
     std::string testStr;
     Data::Success test = file.readFromFile(testStr);
     if (test!=Data::SUCCESS){
+        std::cout << file.getFileName() << std::endl;
         showStatusDialog(test);
         return;
     }
-    if (file.isEncrypted()) {
+    if (isEncrypted()) {
         wxMessageDialog error(NULL, wxT("Error: File is encrypted"), wxT("Error"), wxOK | wxICON_ERROR);
         error.ShowModal();
         return;
@@ -421,7 +439,7 @@ void PasswordSaverUIFrame::OnSearchButtonClick(wxCommandEvent& event)
         showStatusDialog(test);
         return;
     }
-    if (file.isEncrypted()) {
+    if (isEncrypted()) {
         wxMessageDialog error(NULL, wxT("Error: File is encrypted"), wxT("Error"), wxOK | wxICON_ERROR);
         error.ShowModal();
         return;
@@ -472,10 +490,59 @@ void PasswordSaverUIFrame::OnSearchButtonClick(wxCommandEvent& event)
 void PasswordSaverUIFrame::OnDisplayButtonClick(wxCommandEvent& event)
 {
     refresh();
-    std::string fileName = dir + mainFile;
+    std::string fileName = realDir + realFile;
     wxString file(fileName.c_str(), wxConvUTF8);
     FileLabel->SetLabel(wxT("File: ") + file);
     if (webLink->IsShown()) webLink->Hide();
+}
+
+/**
+ * Encrypt the file with either PIN or passwowrd
+ * @param usePIN - whether to use PIN or password
+ * @param passcode - the PIN or password string
+ * @return the Encryptor class generated enumeration result
+ */
+Encryptor::Status PasswordSaverUIFrame::encrypt(std::string passcode){
+    file.close();
+    mkdir(keyDir.c_str());
+    Encryptor aes(keyDir);
+    return aes.encrypt(passcode, dir + mainFile);
+}
+
+/**
+ * Decrypt the file with either PIN or passwowrd
+ * @param passcode - the PIN or password string
+ * @return the Encryptor class generated enumeration result
+ */
+Encryptor::Status PasswordSaverUIFrame::decrypt(std::string passcode){
+    file.close();
+    Encryptor aes(keyDir);
+    return aes.decrypt(passcode, dir + mainFile);
+}
+
+/**
+ * Encrypt/Decrypt the dummy file
+ * @param state - encrypt(true) or decrypt(false)
+ */
+void PasswordSaverUIFrame::encrypt(bool state){
+    std::string defaultFile = "key0.bin";
+    Encryptor obj;
+    if (obj.isEncrypted(keyDir + "key0.bin")!=state){
+        obj.encryptFile(state, keyDir + "key0.bin",
+        "abcdefghijklmnop",
+        "abcdefghijklmnop");
+    }
+}
+
+/**
+ * Is the file in the file stream object encrypted?
+ * @return whether it is encrypted
+ */
+bool PasswordSaverUIFrame::isEncrypted(){
+    file.close();
+    Encryptor obj;
+    std::cout << "Called\n";
+    return obj.isEncrypted(dir + mainFile);
 }
 
 /**
@@ -489,8 +556,7 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
         showStatusDialog(test);
         return;
     }
-    Encryptor obj;
-    if (obj.isEncrypted(dir + mainFile) && obj.isEncrypted() && file.getFileName()==dir + mainFile){
+    if (isEncrypted() && realDir + realFile == dir + mainFile){
         showStatusDialog(Encryptor::ENCRYPTED, true);
         return;
     }
@@ -504,15 +570,15 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
     confirm = msg.ShowModal();
     if (confirm==wxID_NO) return;
     FileBox->Clear();
-    std::string fullFile = dir + mainFile;
+    std::string fullFile = realDir + realFile;
     wxString str(fullFile.c_str(), wxConvUTF8);
     FileLabel->SetLabel(wxT("File: ") + str);
-    if (file.getFileName()!=dir + mainFile){
-        file.encrypt(true);
+    if (realDir + realFile != dir + mainFile){
+        encrypt(true);
         showStatusDialog(Encryptor::WRONG_PASSWORD, true);
         return;
     }
-    Encryptor::Status stats = file.encrypt(info);
+    Encryptor::Status stats = encrypt(info);
     showStatusDialog(stats, true);
 }
 
@@ -521,14 +587,16 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
  */
 void PasswordSaverUIFrame::OnDecryptButtonClick(wxCommandEvent& event)
 {
+    dir = realDir;
+    mainFile = realFile;
+    file.changeFile(dir, mainFile);
     std::string testStr;
     Data::Success test = file.readFromFile(testStr);
     if (test!=Data::SUCCESS){
         showStatusDialog(test);
         return;
     }
-    file.changeFile(dir, mainFile);
-    if (!file.isEncrypted()){
+    if (!isEncrypted()){
         showStatusDialog(Encryptor::DECRYPTED, false);
         return;
     }
@@ -537,9 +605,12 @@ void PasswordSaverUIFrame::OnDecryptButtonClick(wxCommandEvent& event)
     int confirm = dlg.ShowModal();
     if (confirm==wxID_CANCEL) return;
     std::string info = std::string(dlg.GetValue().mb_str());
-    Encryptor::Status stats = file.decrypt(info);
+    Encryptor::Status stats = decrypt(info);
     if (stats==Encryptor::WRONG_PASSWORD){
-        file.encrypt(false);
+        encrypt(false);
+        dir = keyDir;
+        mainFile = "key0.bin";
+        file.changeFile(dir, mainFile);
     }
     showStatusDialog(stats, false);
     refresh();
@@ -556,7 +627,7 @@ void PasswordSaverUIFrame::OnDeleteButtonClick(wxCommandEvent& event)
         showStatusDialog(test);
         return;
     }
-    if (file.isEncrypted()){
+    if (isEncrypted()){
         wxMessageDialog error(NULL, wxT("Error: File is encrypted"), wxT("Error"), wxOK | wxICON_ERROR);
         error.ShowModal();
         return;
@@ -591,7 +662,7 @@ void PasswordSaverUIFrame::OnEditButtonClick(wxCommandEvent& event)
         showStatusDialog(test);
         return;
     }
-    if (file.isEncrypted()){
+    if (isEncrypted()){
         wxMessageDialog error(NULL, wxT("Error: File is encrypted"), wxT("Error"), wxOK | wxICON_ERROR);
         error.ShowModal();
         return;

@@ -34,11 +34,18 @@ class PasswordSaverUIFrame: public wxFrame
     private:
         std::string dir = "";
         std::string mainFile = "";
+        std::string keyDir = "";
+        std::string realDir;
+        std::string realFile;
         Data file;
         void addToListBox(std::string);
         void showStatusDialog(Data::Success);
         void showStatusDialog(Encryptor::Status, bool);
         void refresh();
+        Encryptor::Status encrypt(std::string);
+        Encryptor::Status decrypt(std::string);
+        void encrypt(bool);
+        bool isEncrypted();
         //(*Handlers(PasswordSaverUIFrame)
         void OnQuit(wxCommandEvent& event);
         void OnAbout(wxCommandEvent& event);

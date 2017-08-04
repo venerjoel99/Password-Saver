@@ -88,14 +88,19 @@ std::fstream& operator>>(std::fstream& stream, std::string& fileString){
 Data::Data(std::string file){
     fileDir = "";
     fileName = file;
-    encrypt(true);
+}
+
+Data::Data(std::string dir, std::string file){
+    fileDir = dir;
+    fileName = file;
 }
 
 /**
  * Default constructor for Data class
  */
 Data::Data(){
-    encrypt(true);
+    fileDir = "";
+    fileName = "";
 }
 
 /**
@@ -103,7 +108,7 @@ Data::Data(){
  */
 Data::~Data(){
     if (theFile.is_open()) theFile.close();
-    encrypt(true);
+    std::cout << "Destructor\n";
 }
 
 /**
@@ -398,56 +403,7 @@ Data::Success Data::changeInfo(std::string website, std::string newUsername, std
     return changeInfo(website, newPassword, PS);
 }
 
-/**
- * Encrypt the file with either PIN or passwowrd
- * @param usePIN - whether to use PIN or password
- * @param passcode - the PIN or password string
- * @return the Encryptor class generated enumeration result
- */
-Encryptor::Status Data::encrypt(std::string passcode){
-    unsigned int periodPos = fileName.find('.');
-    std::string keyFolder = periodPos!=std::string::npos ?
-        fileDir + fileName.substr(0, periodPos) + "/" :
-        fileDir + fileName + "/";
-    mkdir(keyFolder.c_str());
-    Encryptor aes(keyFolder);
-    close();
-    return aes.encrypt(passcode, fileDir + fileName);
-}
 
-/**
- * Decrypt the file with either PIN or passwowrd
- * @param passcode - the PIN or password string
- * @return the Encryptor class generated enumeration result
- */
-Encryptor::Status Data::decrypt(std::string passcode){
-    unsigned int periodPos = fileName.find('.');
-    std::string keyFolder = (periodPos!=std::string::npos) ?
-        fileDir + fileName.substr(0, periodPos) + "/" :
-        fileDir + fileName + "/";
-    Encryptor aes(keyFolder);
-    close();
-    return aes.decrypt(passcode, fileDir + fileName);
-}
-
-/**
- * Encrypt/Decrypt the dummy file
- * @param state - encrypt(true) or decrypt(false)
- */
-void Data::encrypt(bool state){
-    unsigned int periodPos = fileName.find('.');
-    std::string keyFolder = (periodPos!=std::string::npos) ?
-        fileDir + fileName.substr(0, periodPos) + "/" :
-        fileDir + fileName + "/";
-    Encryptor obj(keyFolder);
-    if (obj.isEncrypted(keyFolder + "key0.bin")!=state){
-        obj.encryptFile(state, keyFolder + "key0.bin",
-        "abcdefghijklmnop",
-        "abcdefghijklmnop");
-    }
-    std::string defaultFile = "key0.bin";
-    if (!state) changeFile(keyFolder, defaultFile);
-}
 
 /**
  * Gets the current full file location
@@ -455,13 +411,4 @@ void Data::encrypt(bool state){
  */
 std::string Data::getFileName(){
     return fileDir + fileName;
-}
-
-/**
- * Is the file in the file stream object encrypted?
- * @return whether it is encrypted
- */
-bool Data::isEncrypted(){
-    Encryptor obj;
-    return obj.isEncrypted(fileDir + fileName);
 }

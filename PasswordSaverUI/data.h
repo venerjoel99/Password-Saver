@@ -2,7 +2,6 @@
 #define DATA_H_INCLUDED
 #include <fstream>
 #include <string>
-#include "Encryptor.h"
 
 class Info{
 private:
@@ -29,6 +28,7 @@ private:
     std::string fileName;
     std::string fileDir;
     std::string keyword;
+    std::string keyFolder;
     std::fstream theFile;
     enum OpenMode{
         REGULAR,
@@ -66,11 +66,7 @@ public:
     };
     Data::Success changeInfo(std::string ,std::string , Data::Change);
     Data::Success changeInfo(std::string, std::string, std::string);
-    Encryptor::Status encrypt(std::string);
-    Encryptor::Status decrypt(std::string);
     std::string getFileName();
-    void encrypt(bool);
-    bool isEncrypted();
 };
 
 #endif // DATA_H_INCLUDED

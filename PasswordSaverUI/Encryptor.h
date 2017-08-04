@@ -17,6 +17,7 @@ private:
     const int MIN_UNENCRYPTED = 0;
     const int MAX_UNENCRYPTED = 128;
     std::string directory;
+    std::string keyDirectory;
     std::fstream keyStream;
     std::fstream mainStream;
     int findSize(std::fstream&);
@@ -37,6 +38,7 @@ private:
 public:
     Encryptor(void);
     Encryptor(std::string);
+    Encryptor(std::string, std::string);
     ~Encryptor(){
         if (keyStream.is_open()) keyStream.close();
         if (mainStream.is_open()) mainStream.close();
