@@ -12,7 +12,6 @@
 #include "wx_pch.h"
 #include <wx/msgdlg.h>
 #include <wx/textdlg.h>
-#include <wx/msgdlg.h>
 
 #include <fstream>
 #include <string>
@@ -705,6 +704,9 @@ void PasswordSaverUIFrame::OnDlgButtonClick(wxCommandEvent& event)
 {
     MultiTextDialog dlg(NULL, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     int confirm = dlg.ShowModal();
-    if (confirm==wxID_OK) std::cout << "pressed ok\n";
-    if (confirm==wxID_CANCEL) std::cout << "pressed cancel\n";
+    if (confirm==wxID_CANCEL) return;
+    std::cout << dlg.getTextBox(1) << std::endl;
+    std::cout << dlg.getTextBox(2) << std::endl;
+    std::cout << dlg.getTextBox(3) << std::endl;
+    std::cout << dlg.getTextBox(4) << std::endl;
 }
