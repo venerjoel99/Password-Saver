@@ -20,8 +20,6 @@
 #include "data.h"
 #include "Encryptor.h"
 
-#include <iostream>
-
 //(*InternalHeaders(PasswordSaverUIFrame)
 #include <wx/artprov.h>
 #include <wx/bitmap.h>

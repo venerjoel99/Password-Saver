@@ -16,6 +16,8 @@ private:
     const int haystackSize = 10000;
     const int MIN_UNENCRYPTED = 0;
     const int MAX_UNENCRYPTED = 128;
+    const int MIN_ASCII = 33;
+    const int MAX_ASCII = 126;
     std::string directory;
     std::string keyDirectory;
     std::fstream keyStream;
@@ -25,7 +27,7 @@ private:
     void configureHaystack(int, int);
     int generatePIN(std::string);
     int generateKeyFile();
-    std::string generateKey(int, int);
+    std::string generateKey(int, int, std::string);
     std::string generateIV(int);
     void openKey(bool);
     void open(bool, std::string);

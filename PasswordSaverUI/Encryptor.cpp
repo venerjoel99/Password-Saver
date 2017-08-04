@@ -167,15 +167,15 @@ void Encryptor::generateHayStack(){
         int fileSize = haystackSize + blockSize;
         char passcode[fileSize + 8];
         for (int i=0; i < fileSize; i++){
-            int random = rand()%93;
-            passcode[i] = '!' + random;
+            int random = rand() % (MAX_ASCII - MIN_ASCII);
+            passcode[i] = ((char)MIN_ASCII) + random;
         }
         for (int i=fileSize; i < fileSize + 8; i++){
-            int random = rand()%10;
+            int random = rand() % 10;
             char num = Convert::intChar(random);
             passcode[i] = num;
         }
-        mainStream.write(passcode, 10024);
+        mainStream.write(passcode, fileSize + 8);
         close(mainStream);
     }
 }
@@ -315,7 +315,7 @@ std::string Encryptor::generateIV(int fileNum){
  * @param fileNum - the number of the key[num].bin file
  * @return the generated key
  */
-std::string Encryptor::generateKey(int PIN, int fileNum){
+std::string Encryptor::generateKey(int PIN, int fileNum, std::string password){
     try{
         open(false, fileNum);
     }
@@ -353,9 +353,16 @@ std::string Encryptor::generateKey(int PIN, int fileNum){
         }
     }
     close(mainStream);
+    std::string str = "";
+    for (int i=0; i < keyLength; i++){
+        str += finalKey[i];
+    }
+    std::string hayKey = retrieveKey(password);
     std::string keyStr = "";
     for (int i=0; i < keyLength; i++){
-        keyStr += finalKey[i];
+        int newCharVal = (((int)finalKey[i]) ^ ((int)hayKey.at(i)))
+                % (MAX_ASCII - MIN_ASCII) + MIN_ASCII;
+        keyStr += (char)newCharVal;
     }
     return keyStr;
 }
@@ -659,7 +666,7 @@ Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile)
         if (pinVal==-1) return KEY_NOT_FOUND;
         configureHaystack(pinVal, fileNum);
         std::string ivStr = generateIV(fileNum);
-        std::string keyStr = generateKey(pinVal, fileNum);
+        std::string keyStr = generateKey(pinVal, fileNum, password);
         stat = encryptFile(true, mainFile, ivStr, keyStr);
         if (stat==SUCCESS) stat = encryptHaystack(password);
     }catch(Encryptor::Status s){
@@ -692,7 +699,7 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         close(keyStream);
         int fileNum = (int)info % 3 + 1;
         int PIN = generatePIN(password);
-        std::string keyStr = generateKey(PIN, fileNum);
+        std::string keyStr = generateKey(PIN, fileNum, password);
         std::string ivStr = generateIV(fileNum);
         stats = encryptFile(false, mainFile, ivStr, keyStr);
         if (stats!=SUCCESS){
