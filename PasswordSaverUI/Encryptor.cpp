@@ -12,6 +12,8 @@
 
 #include "Convert.h"
 
+#include <iostream>
+
 /**
  * Default constructor
  */
@@ -359,10 +361,10 @@ std::string Encryptor::generateKey(int PIN, int fileNum, std::string password){
     }
     std::string hayKey = retrieveKey(password);
     std::string keyStr = "";
-    for (int i=0; i < keyLength; i++){
-        int newCharVal = (((int)finalKey[i]) ^ ((int)hayKey.at(i)))
+    for (unsigned int i=0; i < keyLength; i++){
+        unsigned int newCharVal = (((unsigned int)finalKey[i]) + ((unsigned int)hayKey.at(i)))
                 % (MAX_ASCII - MIN_ASCII) + MIN_ASCII;
-        keyStr += (char)newCharVal;
+        keyStr += (unsigned char)newCharVal;
     }
     return keyStr;
 }
@@ -469,7 +471,11 @@ std::string Encryptor::encryptText(bool encrypt, std::string text, std::string i
         CryptoPP::StreamTransformationFilter stfDecryptor(cbcDecryption, new CryptoPP::StringSink( plaintext ) );
         stfDecryptor.Put( reinterpret_cast<const unsigned char*>( ciphertext.c_str() ), ciphertext.size() );
         stfDecryptor.MessageEnd();
-        result = plaintext;
+        result = "";
+        for (unsigned int i = 0; i < plaintext.size(); i++){
+            char c = plaintext.at(i);
+            if ((int)c!=0) result += c;
+        }
     }
     ///End of the cited code
     return result;
@@ -507,7 +513,7 @@ std::string Encryptor::retrieveKey(std::string password){
         throw s;
     }
     char keyArray[keyLength];
-    for (int i=0; i < keyLength; i++){
+    for (unsigned int i=0; i < keyLength; i++){
         keyStream.seekg(i, std::ios::beg);
         char c;
         keyStream.get(c);

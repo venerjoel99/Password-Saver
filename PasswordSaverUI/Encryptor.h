@@ -16,8 +16,8 @@ private:
     const int haystackSize = 10000;
     const int MIN_UNENCRYPTED = 0;
     const int MAX_UNENCRYPTED = 128;
-    const int MIN_ASCII = 33;
-    const int MAX_ASCII = 126;
+    const unsigned int MIN_ASCII = 33;
+    const unsigned int MAX_ASCII = 126;
     std::string directory;
     std::string keyDirectory;
     std::fstream keyStream;
