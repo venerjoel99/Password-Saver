@@ -12,6 +12,8 @@
 
 #include "Convert.h"
 
+#include <iostream>
+
 /**
  * Default constructor
  */
@@ -360,6 +362,8 @@ std::string Encryptor::generateKey(int PIN, int fileNum, std::string password){
     }
     std::string hayKey = retrieveKey(password);
     std::string keyStr = "";
+    std::cout << str << std::endl;
+    std::cout << hayKey << std::endl;
     for (unsigned int i=0; i < keyLength; i++){
         unsigned char c = str.at(i);
         unsigned char d = hayKey.at(i);
