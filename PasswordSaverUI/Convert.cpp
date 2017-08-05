@@ -27,7 +27,7 @@ int Convert::bitwiseXOR(int num1, int num2){
     }
     int result = 0;
     for (int i = 1000; i > 0; i/=10){
-        int value = Convert::digit(num1,i)^Convert::digit(num2,i);
+        int value = (Convert::digit(num1,i)^Convert::digit(num2,i)) % 10;
         value*=i;
         result+=value;
     }
