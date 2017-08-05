@@ -265,6 +265,7 @@ void PasswordSaverUIFrame::OnAbout(wxCommandEvent& event)
 void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
 {
     wxFileDialog dlg(NULL, wxT("Select a file"));
+    dlg.SetWildcard(wxT("*.bin"));
     int confirm = dlg.ShowModal();
     if (confirm==wxID_CANCEL) return;
     std::string str = std::string(dlg.GetDirectory().mb_str());

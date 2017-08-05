@@ -201,7 +201,7 @@ int Encryptor::generateKeyFile(){
     }
     keyStream.seekp(0, std::ios::beg);
     keyStream.write(primaryKey, keyLength);
-    int randIndex = ((int)primaryKey[0]) % keyLength;
+    int randIndex = ((unsigned int)primaryKey[0]) % keyLength;
     try{
         openKey(false);
     }
@@ -212,7 +212,7 @@ int Encryptor::generateKeyFile(){
     keyStream.seekg(randIndex, std::ios::beg);
     keyStream.get(c);
     close(keyStream);
-    return ((int)c) % filesInHaystack + 1;
+    return ((unsigned int)c) % filesInHaystack + 1;
 }
 
 /**
@@ -361,7 +361,9 @@ std::string Encryptor::generateKey(int PIN, int fileNum, std::string password){
     std::string hayKey = retrieveKey(password);
     std::string keyStr = "";
     for (unsigned int i=0; i < keyLength; i++){
-        unsigned int newCharVal = (((unsigned int)finalKey[i]) + ((unsigned int)hayKey.at(i)))
+        unsigned char c = str.at(i);
+        unsigned char d = hayKey.at(i);
+        unsigned int newCharVal = (((unsigned int)c) + ((unsigned int)d))
                 % (MAX_ASCII - MIN_ASCII) + MIN_ASCII;
         keyStr += (unsigned char)newCharVal;
     }
@@ -584,7 +586,7 @@ Encryptor::Status Encryptor::decryptHaystack(std::string password){
     char info;
     keyStream.seekg(0, std::ios::beg);
     keyStream.get(info);
-    int indicatorIndex = ((int)info) % keyLength;
+    int indicatorIndex = ((unsigned int)info) % keyLength;
     keyStream.seekg(indicatorIndex, std::ios::beg);
     keyStream.get(info);
     info = Convert::intChar(((int)info) % filesInHaystack + 1);
@@ -687,11 +689,11 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         char info;
         keyStream.seekg(0, std::ios::beg);
         keyStream.get(info);
-        int indicatorIndex = ((int)info) % keyLength;
+        unsigned int indicatorIndex = ((unsigned int)info) % keyLength;
         keyStream.seekg(indicatorIndex, std::ios::beg);
         keyStream.get(info);
         close(keyStream);
-        int fileNum = (int)info % filesInHaystack + 1;
+        int fileNum = (unsigned int)info % filesInHaystack + 1;
         int PIN = generatePIN(password);
         std::string keyStr = generateKey(PIN, fileNum, password);
         std::string ivStr = generateIV(fileNum);
