@@ -8,12 +8,14 @@
 class Encryptor{
 private:
     int keyLength = CryptoPP::AES::DEFAULT_KEYLENGTH;
+    int haystackSize = 10000;
     const unsigned int keySize1 = CryptoPP::AES::MIN_KEYLENGTH;
     const unsigned int keySize2 = (CryptoPP::AES::MIN_KEYLENGTH +
         CryptoPP::AES::MAX_KEYLENGTH) / 2;
     const unsigned int keySize3 = CryptoPP::AES::MAX_KEYLENGTH;
     const int blockSize = CryptoPP::AES::BLOCKSIZE;
-    const int haystackSize = 10000;
+    const int MIN_HAYSTACK_SIZE = 10000;
+    const int filesInHaystack = 3;
     const int MIN_UNENCRYPTED = 0;
     const int MAX_UNENCRYPTED = 128;
     const unsigned int MIN_ASCII = 33;

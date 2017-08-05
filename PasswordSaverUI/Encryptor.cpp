@@ -149,6 +149,7 @@ int Encryptor::generatePIN(std::string password){
     PIN += (((int)pow((int)endKeyChar, 2.0) ^ (int)pow((int)endChar, 2.0)) % 10) * 100;
     PIN += (((int)pow((int)begKeyChar, 2.0) ^ (int)pow((int)endKeyChar, 2.0)) % 10) * 10;
     PIN += ((int)pow(2.0, size) ^ (int)pow(size, 3.0)) % 10;
+    if (PIN > haystackSize) PIN = PIN % haystackSize;
     return PIN;
 }
 
@@ -157,7 +158,7 @@ int Encryptor::generatePIN(std::string password){
  */
 void Encryptor::generateHayStack(){
     srand(time(0));
-    for (int i = 1; i < 4; i++){
+    for (int i = 1; i <= filesInHaystack; i++){
         try{
             open(true, i);
         }
@@ -189,8 +190,8 @@ int Encryptor::generateKeyFile(){
     char primaryKey[keyLength];
     srand(time(0));
     for (int i = 0; i < keyLength; i++){
-        int random = rand()%93;
-        primaryKey[i] = '!' + random;
+        int random = rand() % (MAX_ASCII - MIN_ASCII);
+        primaryKey[i] = ((unsigned char)MIN_ASCII) + random;
     }
     try{
         openKey(true);
@@ -211,7 +212,7 @@ int Encryptor::generateKeyFile(){
     keyStream.seekg(randIndex, std::ios::beg);
     keyStream.get(c);
     close(keyStream);
-    return ((int)c) % 3 + 1;
+    return ((int)c) % filesInHaystack + 1;
 }
 
 /**
@@ -373,9 +374,9 @@ std::string Encryptor::generateKey(int PIN, int fileNum, std::string password){
  * @return whether all 3 files are encyrpted or not
  */
 bool Encryptor::isEncrypted(){
-    bool encrypted[3];
-    for (int i = 0; i < 3; i++){
-        std::string fileName = directory + "key" + Convert::intStr(i+1) + ".bin";
+    bool encrypted[filesInHaystack];
+    for (int i = 1; i <= filesInHaystack; i++){
+        std::string fileName = directory + "key" + Convert::intStr(i) + ".bin";
         std::string dataFeed;
         try{
             dataFeed = fileStr(fileName);
@@ -559,7 +560,7 @@ Encryptor::Status Encryptor::encryptHaystack(std::string password){
     }
     close(keyStream);
     Status stat;
-    for (int i = 1; i < 4; i++){
+    for (int i = 1; i <= filesInHaystack; i++){
         std::string num = Convert::intStr(i);
         std::string fileName =  directory + "key" + num + ".bin";
         stat = encryptFile(true, fileName, ivStr, keyStr);
@@ -586,7 +587,7 @@ Encryptor::Status Encryptor::decryptHaystack(std::string password){
     int indicatorIndex = ((int)info) % keyLength;
     keyStream.seekg(indicatorIndex, std::ios::beg);
     keyStream.get(info);
-    info = Convert::intChar(((int)info) % 3 + 1);
+    info = Convert::intChar(((int)info) % filesInHaystack + 1);
     std::string fileName = directory + "key" + info + ".bin";
     std::string keyStr = retrieveKey(password);
     std::string ivStr = "";
@@ -646,6 +647,7 @@ Encryptor::Status Encryptor::encryptFile(bool encrypt, std::string fileName, std
  * @return the enumerated result of the function
  */
 Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile){
+    if (haystackSize < MIN_HAYSTACK_SIZE) haystackSize = MIN_HAYSTACK_SIZE;
     Status stat;
     try{
         if (isEncrypted(mainFile) && isEncrypted()) return ENCRYPTED;
@@ -689,7 +691,7 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         keyStream.seekg(indicatorIndex, std::ios::beg);
         keyStream.get(info);
         close(keyStream);
-        int fileNum = (int)info % 3 + 1;
+        int fileNum = (int)info % filesInHaystack + 1;
         int PIN = generatePIN(password);
         std::string keyStr = generateKey(PIN, fileNum, password);
         std::string ivStr = generateIV(fileNum);

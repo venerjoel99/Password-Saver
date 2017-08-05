@@ -531,15 +531,18 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
         showStatusDialog(Encryptor::ENCRYPTED, true);
         return;
     }
-    wxPasswordEntryDialog dlg(NULL, wxT("Enter a new password"), wxT("New password"), wxEmptyString,
-                                 wxOK | wxCANCEL);
-    int confirm = dlg.ShowModal();
-    if (confirm==wxID_CANCEL) return;
-    std::string info = std::string(dlg.GetValue().mb_str());
-    wxMessageDialog msg(NULL, wxT("Do you remember your password?"), wxT("Confirm"), wxYES_NO |
-                    wxNO_DEFAULT | wxICON_QUESTION);
-    confirm = msg.ShowModal();
-    if (confirm==wxID_NO) return;
+    int confirm;
+    std::string info;
+    do{
+        wxPasswordEntryDialog dlg(NULL, wxT("Enter a new password"), wxT("New password"), wxEmptyString,
+                                    wxOK | wxCANCEL);
+        confirm = dlg.ShowModal();
+        if (confirm==wxID_CANCEL) return;
+        info = std::string(dlg.GetValue().mb_str());
+        wxMessageDialog msg(NULL, wxT("Do you remember your password?"), wxT("Confirm"), wxYES_NO |
+                        wxNO_DEFAULT | wxICON_QUESTION);
+        confirm = msg.ShowModal();
+    } while (confirm==wxID_NO);
     FileBox->Clear();
     std::string fullFile = realDir + realFile;
     wxString str(fullFile.c_str(), wxConvUTF8);
@@ -620,6 +623,10 @@ void PasswordSaverUIFrame::OnDeleteButtonClick(wxCommandEvent& event)
     if (confirm==wxID_CANCEL) return;
     wxString website = dlg.GetValue();
     std::string str = std::string(website.mb_str());
+    wxMessageDialog msg(NULL, wxT("Are you sure? (This cannot be undone)"), wxT("Confirm"), wxYES_NO |
+                        wxNO_DEFAULT | wxICON_QUESTION);
+    confirm = msg.ShowModal();
+    if (confirm==wxID_NO) return;
     Data::Success stat = file.changeInfo(str, "null", Data::DE);
     file.close();
     if (stat!=Data::SUCCESS){
