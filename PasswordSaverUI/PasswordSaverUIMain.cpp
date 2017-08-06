@@ -555,7 +555,7 @@ void PasswordSaverUIFrame::OnEncryptButtonClick(wxCommandEvent& event)
     }
     Data dummy(keyDir, "key0.bin");
     std::string hashStr = "";
-    for (int i = 0; i < testStr.size(); i++){
+    for (unsigned int i = 0; i < testStr.size(); i++){
         char c = testStr.at(i);
         hashStr += (c=='\n') ? c : '-';
     }

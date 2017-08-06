@@ -7,7 +7,7 @@
 
 class Encryptor{
 private:
-    int keyLength = CryptoPP::AES::DEFAULT_KEYLENGTH;
+    unsigned int keyLength = CryptoPP::AES::DEFAULT_KEYLENGTH;
     int haystackSize = 10000;
     const unsigned int keySize1 = CryptoPP::AES::MIN_KEYLENGTH;
     const unsigned int keySize2 = (CryptoPP::AES::MIN_KEYLENGTH +
@@ -29,6 +29,7 @@ private:
     void configureHaystack(int, int);
     int generatePIN(std::string);
     int generateKeyFile();
+    int retrieveFileNum(void);
     std::string generateKey(int, int, std::string);
     std::string generateIV(int);
     void openKey(bool);
@@ -38,6 +39,7 @@ private:
     void open(int);
     void close(std::fstream&);
     std::string retrieveKey(std::string);
+    std::string retrieveKey(void);
     std::string fileStr(std::string);
 public:
     Encryptor(void);
@@ -59,8 +61,7 @@ public:
     bool isEncrypted(std::string);
     bool isEncrypted(void);
 private:
-    Status encryptHaystack(std::string);
-    Status decryptHaystack(std::string);
+    Status encryptHaystack(int, bool);
 public:
     std::string encryptText(bool, std::string, std::string, std::string);
     Status encryptFile(bool, std::string, std::string, std::string);
