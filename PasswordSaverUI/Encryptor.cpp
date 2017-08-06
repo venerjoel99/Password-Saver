@@ -189,7 +189,7 @@ void Encryptor::generateHayStack(){
 int Encryptor::generateKeyFile(){
     char primaryKey[keyLength];
     srand(time(0));
-    for (int i = 0; i < keyLength; i++){
+    for (unsigned int i = 0; i < keyLength; i++){
         int random = rand() % (MAX_ASCII - MIN_ASCII);
         primaryKey[i] = ((unsigned char)MIN_ASCII) + random;
     }
@@ -501,7 +501,39 @@ int Encryptor::findSize(std::fstream& file){
 }
 
 /**
- * Retrieves the key from key.bin to be used
+ * Retrieve the key from only key.bin
+ * @return the key string
+ */
+std::string Encryptor::retrieveKey(){
+    try{
+        openKey(false);
+    }
+    catch(Encryptor::Status s){
+        throw s;
+    }
+    std::string keyStr = "";
+    for (unsigned int i=0; i < keyLength; i++){
+        keyStream.seekg(i, std::ios::beg);
+        char c;
+        keyStream.get(c);
+        keyStr += c;
+    }
+    close(keyStream);
+    return keyStr;
+}
+
+/**
+ * Determine what key[num].bin file to use
+ * @return the key[num].bin's [num] in integer
+ */
+int Encryptor::retrieveFileNum(){
+    std::string keyStr = retrieveKey();
+    unsigned int indicatorIndex = ((unsigned int)keyStr.at(0)) % keyLength;
+    return ((unsigned int)keyStr.at(indicatorIndex)) % filesInHaystack + 1;
+}
+
+/**
+ * Retrieves the key from key.bin and user password to be used
  * to encrypt/decrypt the haystack
  * @param password - the user-entered password
  * @return the haystack key string
@@ -529,86 +561,33 @@ std::string Encryptor::retrieveKey(std::string password){
     }
     close(keyStream);
     std::string keyStr = "";
-    for (int i =0; i < keyLength; i ++){
+    for (unsigned int i =0; i < keyLength; i ++){
         keyStr += keyArray[i];
     }
     return keyStr;
 }
 
 /**
- * Encrypt the 3 haystack files(key[num].bin);
- * @param the user entered password string
+ * Encrypt/Decrypt a haystack file(key[num].bin);
+ * @param the haystack file number
+ * @param encrypt(true) or decrypt(false)
  * @return the resulting status of the haystack encryption
  */
-Encryptor::Status Encryptor::encryptHaystack(std::string password){
+Encryptor::Status Encryptor::encryptHaystack(int num, bool state){
     std::string keyStr;
     try{
-        keyStr = retrieveKey(password);
+        keyStr = retrieveKey();
     }catch(Encryptor::Status s){
         return s;
     }
     std::string ivStr = "";
-    try{
-        openKey(false);
-    }
-    catch(Encryptor::Status s){
-        return s;
-    }
     for (int i = blockSize - 1; i >= 0; i--){
-        char c;
-        keyStream.seekg(i, std::ios::beg);
-        keyStream.get(c);
-        ivStr += c;
+        ivStr += keyStr.at(i);
     }
     close(keyStream);
-    Status stat;
-    for (int i = 1; i <= filesInHaystack; i++){
-        std::string num = Convert::intStr(i);
-        std::string fileName =  directory + "key" + num + ".bin";
-        stat = encryptFile(true, fileName, ivStr, keyStr);
-        if (stat!=SUCCESS) return stat;
-    }
-    return stat;
+    std::string fileName =  directory + "key" + Convert::intStr(num) + ".bin";
+    return encryptFile(state, fileName, ivStr, keyStr);
 }
-
-/**
- * Decrypt the correct haystack file to be used to decrypt the main file
- * @param the user-entered password string
- * @return the resulting status of the haystack file decryption
- */
-Encryptor::Status Encryptor::decryptHaystack(std::string password){
-    try{
-        openKey(false);
-    }
-    catch(Encryptor::Status s){
-        return s;
-    }
-    char info;
-    keyStream.seekg(0, std::ios::beg);
-    keyStream.get(info);
-    int indicatorIndex = ((unsigned int)info) % keyLength;
-    keyStream.seekg(indicatorIndex, std::ios::beg);
-    keyStream.get(info);
-    info = Convert::intChar(((int)info) % filesInHaystack + 1);
-    std::string fileName = directory + "key" + info + ".bin";
-    std::string keyStr = retrieveKey(password);
-    std::string ivStr = "";
-    try{
-        openKey(false);
-    }
-    catch(Encryptor::Status s){
-        return s;
-    }
-    for (int i = blockSize - 1; i >= 0; i--){
-        char c;
-        keyStream.seekg(i, std::ios::beg);
-        keyStream.get(c);
-        ivStr += c;
-    }
-    close(keyStream);
-    return encryptFile(false, fileName, ivStr, keyStr);
-}
-
 
 /**
  * Encrypt/Decrypt a specified file with a given IV and key
@@ -664,7 +643,12 @@ Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile)
         std::string ivStr = generateIV(fileNum);
         std::string keyStr = generateKey(pinVal, fileNum, password);
         stat = encryptFile(true, mainFile, ivStr, keyStr);
-        if (stat==SUCCESS) stat = encryptHaystack(password);
+        if (stat!=SUCCESS) return stat;
+        for (int i = 1; i <= filesInHaystack; i++){
+            stat = encryptHaystack(i, true);
+            if (stat!=SUCCESS) return stat;
+        }
+        return stat;
     }catch(Encryptor::Status s){
         return s;
     }
@@ -683,38 +667,17 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         if (!isEncrypted(mainFile) && !isEncrypted()) return DECRYPTED;
         if (password.size() > keySize1) keyLength = keySize2;
         if (password.size() > keySize2) keyLength = keySize3;
-        Status stats = decryptHaystack(password);
+        int fileNum = retrieveFileNum();
+        Status stats = encryptHaystack(fileNum, false);
         if (stats!=SUCCESS) return stats;
-        openKey(false);
-        char info;
-        keyStream.seekg(0, std::ios::beg);
-        keyStream.get(info);
-        unsigned int indicatorIndex = ((unsigned int)info) % keyLength;
-        keyStream.seekg(indicatorIndex, std::ios::beg);
-        keyStream.get(info);
-        close(keyStream);
-        int fileNum = (unsigned int)info % filesInHaystack + 1;
         int PIN = generatePIN(password);
         std::string keyStr = generateKey(PIN, fileNum, password);
         std::string ivStr = generateIV(fileNum);
         stats = encryptFile(false, mainFile, ivStr, keyStr);
         if (stats!=SUCCESS){
-            keyStr = retrieveKey(password);
-            char ivChar[keyStr.size()];
-            for (unsigned int i = 0; i < keyStr.size(); i++){
-                ivChar[keyStr.size()-1-i] = keyStr.at(i);
-            }
-            for (unsigned int i = 0; i < keyStr.size(); i++){
-                if (i==0){
-                    ivStr = ivChar[i];
-                }
-                else ivStr +=ivChar[i];
-            }
-            std::string hayNum = directory + "key" + Convert::intStr(fileNum) + ".bin";
-            encryptFile(true, hayNum, ivStr, keyStr);
-            return stats;
+            encryptHaystack(fileNum, true);
         }
-         return stats;
+        return stats;
     }catch(Encryptor::Status s){
         return s;
     }
