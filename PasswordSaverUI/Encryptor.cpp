@@ -52,6 +52,7 @@ void Encryptor::openKey(bool write){
         keyStream.open(keyLocation.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
     }
     if (!keyStream.is_open()){
+        std::cout << "File not found\n";
         throw Encryptor::KEY_NOT_FOUND;
     }
 }
@@ -71,6 +72,7 @@ void Encryptor::open(bool write, int fileNum){
         mainStream.open(fileName.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
     }
     if (!mainStream.is_open()){
+        std::cout << "File not found\n";
         throw Encryptor::FILE_NOT_FOUND;
     }
 }
@@ -84,6 +86,7 @@ void Encryptor::open(int fileNum){
     if (mainStream.is_open()) mainStream.close();
     mainStream.open(fileName.c_str(), std::ios::out|std::ios::binary|std::ios::in);
     if (!mainStream.is_open()){
+        std::cout << "File not found\n";
         throw Encryptor::FILE_NOT_FOUND;
     }
 }
@@ -102,6 +105,7 @@ void Encryptor::open(bool write, std::string fileName){
         mainStream.open(fileName.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
     }
     if (!mainStream.is_open()){
+        std::cout << "File not found\n";
         throw Encryptor::FILE_NOT_FOUND;
     }
 }
@@ -114,6 +118,7 @@ void Encryptor::open(std::string fileName){
     if (mainStream.is_open()) mainStream.close();
     mainStream.open(fileName.c_str(), std::ios::out|std::ios::binary|std::ios::in);
     if (!mainStream.is_open()){
+        std::cout << "File not found\n";
         throw Encryptor::FILE_NOT_FOUND;
     }
 }
@@ -136,6 +141,7 @@ int Encryptor::generatePIN(std::string password){
         openKey(false);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 1\n";
         throw s;
     }
     char begKeyChar, endKeyChar, begChar, endChar;
@@ -152,6 +158,7 @@ int Encryptor::generatePIN(std::string password){
     PIN += (((int)pow((int)begKeyChar, 2.0) ^ (int)pow((int)endKeyChar, 2.0)) % 10) * 10;
     PIN += ((int)pow(2.0, size) ^ (int)pow(size, 3.0)) % 10;
     if (PIN > haystackSize) PIN = PIN % haystackSize;
+    std::cout << "generated PIN " << PIN << std::endl;
     return PIN;
 }
 
@@ -165,6 +172,7 @@ void Encryptor::generateHayStack(){
             open(true, i);
         }
         catch(Encryptor::Status s){
+            std::cout << "Exception 2\n";
             throw s;
         }
         int fileSize = haystackSize + blockSize;
@@ -199,6 +207,7 @@ int Encryptor::generateKeyFile(){
         openKey(true);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 3\n";
         throw s;
     }
     keyStream.seekp(0, std::ios::beg);
@@ -208,13 +217,16 @@ int Encryptor::generateKeyFile(){
         openKey(false);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 4\n";
         throw s;
     }
     char c;
     keyStream.seekg(randIndex, std::ios::beg);
     keyStream.get(c);
     close(keyStream);
-    return ((unsigned int)c) % filesInHaystack + 1;
+    int fileNum = ((unsigned int)c) % filesInHaystack + 1;
+    std::cout << "File Number: " << fileNum << std::endl;
+    return fileNum;
 }
 
 /**
@@ -230,6 +242,7 @@ std::string Encryptor::fileStr(std::string fileName){
         open(false, fileName);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 5\n";
         throw s;
     }
     int fileSize = findSize(mainStream);
@@ -253,6 +266,7 @@ void Encryptor::configureHaystack(int PIN, int fileNum){
         open(fileNum);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 6\n";
         throw s;
     }
     srand(time(0));
@@ -266,8 +280,11 @@ void Encryptor::configureHaystack(int PIN, int fileNum){
         mainStream.seekp(i, std::ios::beg);
         mainStream.put(Convert::intChar(random));
     }
+    std::cout << "IV number: " << ivNum << std::endl;
     int randPIN = rand()%10000;
     int arbNum = Convert::bitwiseXOR(PIN, randPIN);
+    std::cout << "Random number: " << randPIN << std::endl;
+    std::cout << "Arbitrary number: " << arbNum << std::endl;
     place = 1000;
     for (int i=fileSize + 1; i < fileSize + 8; i+=2){
         char num;
@@ -290,6 +307,7 @@ std::string Encryptor::generateIV(int fileNum){
         open(false, fileNum);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 7\n";
         throw s;
     }
     int fileSize = haystackSize + blockSize;
@@ -301,6 +319,7 @@ std::string Encryptor::generateIV(int fileNum){
         else ivLoc+=digit;
     }
     int ivPin = atoi(ivLoc.c_str());
+    std::cout << "IV Num: " << ivPin << std::endl;
     mainStream.seekg(ivPin, std::ios::beg);
     char finalIV[blockSize];
     mainStream.read(finalIV, blockSize);
@@ -323,6 +342,7 @@ std::string Encryptor::generateKey(int PIN, int fileNum, std::string password){
         open(false, fileNum);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 8\n";
         throw s;
     }
     int arbPIN, indexPIN;
@@ -362,8 +382,8 @@ std::string Encryptor::generateKey(int PIN, int fileNum, std::string password){
     }
     std::string hayKey = retrieveKey(password);
     std::string keyStr = "";
-    std::cout << str << std::endl;
-    std::cout << hayKey << std::endl;
+    std::cout << "Primary Key: " << str << std::endl;
+    std::cout << "Haystack Key: " << hayKey << std::endl;
     for (unsigned int i=0; i < keyLength; i++){
         unsigned char c = str.at(i);
         unsigned char d = hayKey.at(i);
@@ -371,6 +391,7 @@ std::string Encryptor::generateKey(int PIN, int fileNum, std::string password){
                 % (MAX_ASCII - MIN_ASCII) + MIN_ASCII;
         keyStr += (unsigned char)newCharVal;
     }
+    std::cout << "File key: " << keyStr << std::endl;
     return keyStr;
 }
 
@@ -387,6 +408,7 @@ bool Encryptor::isEncrypted(){
         try{
             dataFeed = fileStr(fileName);
         }catch(Encryptor::Status s){
+            std::cout << "Exception 9\n";
             return false;
         }
         int fileSize = dataFeed.size();
@@ -398,6 +420,7 @@ bool Encryptor::isEncrypted(){
         for (int k=0; k<fileSize; k++){
             if ((int)charChecker[k]< MIN_UNENCRYPTED ||
                 (int)charChecker[k]> MAX_UNENCRYPTED){
+                std::cout << "Encrypted char: " << charChecker[k] << std::endl;
                 delete[] charChecker;
                 encrypted[i] = true;
                 break;
@@ -419,6 +442,7 @@ bool Encryptor::isEncrypted(std::string fileName){
         open(false, fileName);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 10\n";
         return false;
     }
     std::string dataFeed = fileStr(fileName);
@@ -430,6 +454,7 @@ bool Encryptor::isEncrypted(std::string fileName){
     for (int i=0; i<fileSize; i++){
         if ((int)charChecker[i] < MIN_UNENCRYPTED ||
             (int)charChecker[i] > MAX_UNENCRYPTED){
+            std::cout << "Encrypted char: " << charChecker[i] << std::endl;
             delete[] charChecker;
             return true;
         }
@@ -456,6 +481,8 @@ std::string Encryptor::encryptText(bool encrypt, std::string text, std::string i
         ivArray[i] = ivStr.at(i);
     }
     byte key[ keyLength ], iv[ blockSize ];
+    std::cout << "Key to use: " << key << std::endl;
+    std::cout << "IV to use: " << iv << std::endl;
     memmove(key, keyArray,  keyLength);
     memmove(iv, ivArray, blockSize);
     ///Source of the following code: https://stackoverflow.com/questions/12306956/example-of-aes-using-crypto
@@ -515,6 +542,7 @@ std::string Encryptor::retrieveKey(std::string password){
         openKey(false);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 11\n";
         throw s;
     }
     char keyArray[keyLength];
@@ -536,6 +564,7 @@ std::string Encryptor::retrieveKey(std::string password){
     for (int i =0; i < keyLength; i ++){
         keyStr += keyArray[i];
     }
+    std::cout << "Primary key: " << keyStr << std::endl;
     return keyStr;
 }
 
@@ -549,6 +578,7 @@ Encryptor::Status Encryptor::encryptHaystack(std::string password){
     try{
         keyStr = retrieveKey(password);
     }catch(Encryptor::Status s){
+        std::cout << "Exception 12\n";
         return s;
     }
     std::string ivStr = "";
@@ -556,6 +586,7 @@ Encryptor::Status Encryptor::encryptHaystack(std::string password){
         openKey(false);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 13\n";
         return s;
     }
     for (int i = blockSize - 1; i >= 0; i--){
@@ -585,6 +616,7 @@ Encryptor::Status Encryptor::decryptHaystack(std::string password){
         openKey(false);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 14\n";
         return s;
     }
     char info;
@@ -628,6 +660,7 @@ Encryptor::Status Encryptor::encryptFile(bool encrypt, std::string fileName, std
         result = encryptText(encrypt, fileStr(fileName), ivStr, keyStr);
     }
     catch(...){
+        std::cout << "Exception 15\n";
         if (!encrypt) return WRONG_PASSWORD;
         else return FAIL;
     }
@@ -639,6 +672,7 @@ Encryptor::Status Encryptor::encryptFile(bool encrypt, std::string fileName, std
         open(true, fileName);
     }
     catch(Encryptor::Status s){
+        std::cout << "Exception 16\n";
         return s;
     }
     mainStream.write(fileArray, result.size());
@@ -656,6 +690,7 @@ Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile)
     if (haystackSize < MIN_HAYSTACK_SIZE) haystackSize = MIN_HAYSTACK_SIZE;
     Status stat;
     try{
+        std::cout << "Encrypt starting here\n";
         if (isEncrypted(mainFile) && isEncrypted()) return ENCRYPTED;
         if (password.size() > keySize1) keyLength = keySize2;
         if (password.size() > keySize2) keyLength = keySize3;
@@ -667,9 +702,12 @@ Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile)
         configureHaystack(pinVal, fileNum);
         std::string ivStr = generateIV(fileNum);
         std::string keyStr = generateKey(pinVal, fileNum, password);
+        std::cout << "File Key: " << keyStr << std::endl;
+        std::cout << "File IV: " << ivStr << std::endl;
         stat = encryptFile(true, mainFile, ivStr, keyStr);
         if (stat==SUCCESS) stat = encryptHaystack(password);
     }catch(Encryptor::Status s){
+        std::cout << "Exception 17\n";
         return s;
     }
     return stat;
@@ -684,6 +722,7 @@ Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile)
 Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile){
     Status stats;
     try{
+        std::cout << "Decrypt starting here\n";
         if (!isEncrypted(mainFile) && !isEncrypted()) return DECRYPTED;
         if (password.size() > keySize1) keyLength = keySize2;
         if (password.size() > keySize2) keyLength = keySize3;
@@ -698,9 +737,12 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         keyStream.get(info);
         close(keyStream);
         int fileNum = (unsigned int)info % filesInHaystack + 1;
+        std::cout << "File Number: " << fileNum << std::endl;
         int PIN = generatePIN(password);
         std::string keyStr = generateKey(PIN, fileNum, password);
         std::string ivStr = generateIV(fileNum);
+        std::cout << "File Key: " << keyStr << std::endl;
+        std::cout << "File IV: " << ivStr << std::endl;
         stats = encryptFile(false, mainFile, ivStr, keyStr);
         if (stats!=SUCCESS){
             keyStr = retrieveKey(password);
@@ -720,6 +762,7 @@ Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile)
         }
          return stats;
     }catch(Encryptor::Status s){
+        std::cout << "Exception 18\n";
         return s;
     }
     return stats;
