@@ -35,8 +35,8 @@ class PasswordSaverUIFrame: public wxFrame
         std::string dir = "";
         std::string mainFile = "";
         std::string keyDir = "";
-        std::string realDir;
-        std::string realFile;
+        std::string realDir = dir;
+        std::string realFile = mainFile;
         Data file;
         void addToListBox(std::string);
         void showStatusDialog(Data::Success);
@@ -66,7 +66,6 @@ class PasswordSaverUIFrame: public wxFrame
         //(*Identifiers(PasswordSaverUIFrame)
         static const long ID_HYPERLINKCTRL1;
         static const long ID_STATICTEXT2;
-        static const long ID_BUTTON7;
         static const long ID_BUTTON1;
         static const long ID_BUTTON2;
         static const long ID_BUTTON3;
@@ -75,8 +74,6 @@ class PasswordSaverUIFrame: public wxFrame
         static const long ID_BUTTON6;
         static const long ID_LISTBOX1;
         static const long ID_PANEL1;
-        static const long idMenuEncrypt;
-        static const long idMenuDecrypt;
         static const long idMenuQuit;
         static const long idMenuAbout;
         static const long ID_STATUSBAR1;
@@ -84,15 +81,12 @@ class PasswordSaverUIFrame: public wxFrame
 
         //(*Declarations(PasswordSaverUIFrame)
         wxPanel* mainPanel;
-        wxMenuItem* MenuItem4;
         wxListBox* FileBox;
         wxStaticText* FileLabel;
         wxButton* SearchButton;
-        wxMenuItem* MenuItem3;
         wxButton* DisplayButton;
         wxStatusBar* StatusBar1;
         wxButton* ClearButton;
-        wxButton* ChangeButton;
         wxButton* NewButton;
         wxButton* DeleteButton;
         wxButton* EditButton;

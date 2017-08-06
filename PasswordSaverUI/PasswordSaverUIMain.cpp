@@ -58,7 +58,6 @@ wxString wxbuildinfo(wxbuildinfoformat format)
 //(*IdInit(PasswordSaverUIFrame)
 const long PasswordSaverUIFrame::ID_HYPERLINKCTRL1 = wxNewId();
 const long PasswordSaverUIFrame::ID_STATICTEXT2 = wxNewId();
-const long PasswordSaverUIFrame::ID_BUTTON7 = wxNewId();
 const long PasswordSaverUIFrame::ID_BUTTON1 = wxNewId();
 const long PasswordSaverUIFrame::ID_BUTTON2 = wxNewId();
 const long PasswordSaverUIFrame::ID_BUTTON3 = wxNewId();
@@ -67,8 +66,6 @@ const long PasswordSaverUIFrame::ID_BUTTON5 = wxNewId();
 const long PasswordSaverUIFrame::ID_BUTTON6 = wxNewId();
 const long PasswordSaverUIFrame::ID_LISTBOX1 = wxNewId();
 const long PasswordSaverUIFrame::ID_PANEL1 = wxNewId();
-const long PasswordSaverUIFrame::idMenuEncrypt = wxNewId();
-const long PasswordSaverUIFrame::idMenuDecrypt = wxNewId();
 const long PasswordSaverUIFrame::idMenuQuit = wxNewId();
 const long PasswordSaverUIFrame::idMenuAbout = wxNewId();
 const long PasswordSaverUIFrame::ID_STATUSBAR1 = wxNewId();
@@ -109,8 +106,6 @@ PasswordSaverUIFrame::PasswordSaverUIFrame(wxWindow* parent,wxWindowID id)
     FileLabel = new wxStaticText(mainPanel, ID_STATICTEXT2, _("File: No file opened"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT2"));
     mainGrid->Add(FileLabel, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
     ButtonSizer = new wxBoxSizer(wxVERTICAL);
-    ChangeButton = new wxButton(mainPanel, ID_BUTTON7, _("Open File"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON7"));
-    ButtonSizer->Add(ChangeButton, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
     NewButton = new wxButton(mainPanel, ID_BUTTON1, _("New"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON1"));
     NewButton->SetToolTip(_("Enter new login info"));
     ButtonSizer->Add(NewButton, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
@@ -136,10 +131,6 @@ PasswordSaverUIFrame::PasswordSaverUIFrame(wxWindow* parent,wxWindowID id)
     mainGrid->SetSizeHints(mainPanel);
     MenuBar1 = new wxMenuBar();
     Menu1 = new wxMenu();
-    MenuItem3 = new wxMenuItem(Menu1, idMenuEncrypt, _("Encrypt"), wxEmptyString, wxITEM_NORMAL);
-    Menu1->Append(MenuItem3);
-    MenuItem4 = new wxMenuItem(Menu1, idMenuDecrypt, _("Decrypt"), wxEmptyString, wxITEM_NORMAL);
-    Menu1->Append(MenuItem4);
     MenuItem1 = new wxMenuItem(Menu1, idMenuQuit, _("Quit\tAlt-F4"), _("Quit the application"), wxITEM_NORMAL);
     Menu1->Append(MenuItem1);
     MenuBar1->Append(Menu1, _("&File"));
@@ -155,19 +146,21 @@ PasswordSaverUIFrame::PasswordSaverUIFrame(wxWindow* parent,wxWindowID id)
     StatusBar1->SetStatusStyles(1,__wxStatusBarStyles_1);
     SetStatusBar(StatusBar1);
 
-    Connect(ID_BUTTON7,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnChangeButtonClick);
     Connect(ID_BUTTON1,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnNewButtonClick);
     Connect(ID_BUTTON2,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnSearchButtonClick);
     Connect(ID_BUTTON3,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnDisplayButtonClick);
     Connect(ID_BUTTON4,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnEditButtonClick);
     Connect(ID_BUTTON5,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnDeleteButtonClick);
     Connect(ID_BUTTON6,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnClearButtonClick1);
-    Connect(idMenuEncrypt,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnEncryptButtonClick);
-    Connect(idMenuDecrypt,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnDecryptButtonClick);
     Connect(idMenuQuit,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnQuit);
     Connect(idMenuAbout,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&PasswordSaverUIFrame::OnAbout);
     //*)
-    FileLabel->SetLabel(wxT("File: "));
+    file.changeFile(dir, mainFile);
+    wxCommandEvent e;
+    if (isEncrypted()){
+        OnDecryptButtonClick(e);
+    }
+    OnDisplayButtonClick(e);
 }
 
 /**
@@ -247,6 +240,10 @@ void PasswordSaverUIFrame::showStatusDialog(Encryptor::Status stat, bool encrypt
  */
 void PasswordSaverUIFrame::OnQuit(wxCommandEvent& event)
 {
+    if (!isEncrypted()){
+        wxCommandEvent e;
+        OnEncryptButtonClick(e);
+    }
     Close();
 }
 
@@ -300,7 +297,7 @@ void PasswordSaverUIFrame::OnChangeButtonClick(wxCommandEvent& event)
         keyDir = "";
     }
     file.changeFile(dir, mainFile);
-    ChangeButton->SetLabel(wxT("Change file"));
+    //ChangeButton->SetLabel(wxT("Change file"));
     std::string fileName = realDir + realFile;
     wxString wxFile(fileName.c_str(), wxConvUTF8);
     FileLabel->SetLabel(wxT("File: ") + wxFile);
@@ -478,7 +475,7 @@ void PasswordSaverUIFrame::OnDisplayButtonClick(wxCommandEvent& event)
 Encryptor::Status PasswordSaverUIFrame::encrypt(std::string passcode){
     file.close();
     mkdir(keyDir.c_str());
-    Encryptor aes(keyDir);
+    Encryptor aes(keyDir, dir);
     return aes.encrypt(passcode, dir + mainFile);
 }
 
@@ -489,7 +486,7 @@ Encryptor::Status PasswordSaverUIFrame::encrypt(std::string passcode){
  */
 Encryptor::Status PasswordSaverUIFrame::decrypt(std::string passcode){
     file.close();
-    Encryptor aes(keyDir);
+    Encryptor aes(keyDir, dir);
     return aes.decrypt(passcode, dir + mainFile);
 }
 
