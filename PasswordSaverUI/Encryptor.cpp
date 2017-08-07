@@ -628,6 +628,7 @@ Encryptor::Status Encryptor::encryptFile(bool encrypt, std::string fileName, std
  * @return the enumerated result of the function
  */
 Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile){
+    if (password.size() <= 0) return INVALID_PASSWORD;
     if (haystackSize < MIN_HAYSTACK_SIZE) haystackSize = MIN_HAYSTACK_SIZE;
     Status stat;
     try{
@@ -662,6 +663,7 @@ Encryptor::Status Encryptor::encrypt(std::string password, std::string mainFile)
  * @return the enumerated result of the function
  */
 Encryptor::Status Encryptor::decrypt(std::string password, std::string mainFile){
+    if (password.size() <= 0) return INVALID_PASSWORD;
     Status stats;
     try{
         if (!isEncrypted(mainFile) && !isEncrypted()) return DECRYPTED;

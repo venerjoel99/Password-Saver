@@ -32,8 +32,8 @@ class PasswordSaverUIFrame: public wxFrame
         virtual ~PasswordSaverUIFrame();
 
     private:
-        std::string dir = "";
-        std::string mainFile = "";
+        std::string dir = "D:\\Swordpass\\";
+        std::string mainFile = "passwords.bin";
         std::string keyDir = "";
         std::string realDir = dir;
         std::string realFile = mainFile;
