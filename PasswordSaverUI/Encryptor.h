@@ -56,7 +56,8 @@ public:
         DECRYPTED,
         WRONG_PASSWORD,
         KEY_NOT_FOUND,
-        FILE_NOT_FOUND
+        FILE_NOT_FOUND,
+        INVALID_PASSWORD
     };
     bool isEncrypted(std::string);
     bool isEncrypted(void);
