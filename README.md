@@ -1,7 +1,5 @@
 # Password Saver
 
-How My Encryption works
-======
 ```c++
 #include <iostream>
 
